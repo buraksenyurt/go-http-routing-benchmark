@@ -282,6 +282,7 @@ var (
 	githubPat         http.Handler
 	githubTigerTonic  http.Handler
 	githubTraffic     http.Handler
+	githubGoji        http.Handler
 	githubKocha       http.Handler
 )
 
@@ -296,6 +297,7 @@ func init() {
 	githubPat = loadPat(githubAPI)
 	githubTigerTonic = loadTigerTonic(githubAPI)
 	githubTraffic = loadTraffic(githubAPI)
+	githubGoji = loadGoji(githubAPI)
 	githubKocha = loadKocha(githubAPI)
 }
 
@@ -332,6 +334,10 @@ func BenchmarkTigerTonic_GithubStatic(b *testing.B) {
 func BenchmarkTraffic_GithubStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/user/repos", nil)
 	benchRequest(b, githubTraffic, req)
+}
+func BenchmarkGoji_GithubStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/user/repos", nil)
+	benchRequest(b, githubGoji, req)
 }
 
 func BenchmarkKocha_GithubStatic(b *testing.B) {
@@ -373,6 +379,10 @@ func BenchmarkTraffic_GithubParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/repos/julienschmidt/httprouter/stargazers", nil)
 	benchRequest(b, githubTraffic, req)
 }
+func BenchmarkGoji_GithubParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/repos/julienschmidt/httprouter/stargazers", nil)
+	benchRequest(b, githubGoji, req)
+}
 func BenchmarkKocha_GithubParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/repos/julienschmidt/httprouter/stargazers", nil)
 	benchRequest(b, githubKocha, req)
@@ -402,6 +412,9 @@ func BenchmarkTigerTonic_GithubAll(b *testing.B) {
 }
 func BenchmarkTraffic_GithubAll(b *testing.B) {
 	benchRoutes(b, githubTraffic, githubAPI)
+}
+func BenchmarkGoji_GithubAll(b *testing.B) {
+	benchRoutes(b, githubGoji, githubAPI)
 }
 func BenchmarkKocha_GithubAll(b *testing.B) {
 	benchRoutes(b, githubKocha, githubAPI)

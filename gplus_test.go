@@ -44,6 +44,7 @@ var (
 	gplusPat         http.Handler
 	gplusTigerTonic  http.Handler
 	gplusTraffic     http.Handler
+	gplusGoji        http.Handler
 	gplusKocha       http.Handler
 )
 
@@ -58,6 +59,7 @@ func init() {
 	gplusPat = loadPat(gplusAPI)
 	gplusTigerTonic = loadTigerTonic(gplusAPI)
 	gplusTraffic = loadTraffic(gplusAPI)
+	gplusGoji = loadGoji(gplusAPI)
 	gplusKocha = loadKocha(gplusAPI)
 }
 
@@ -94,6 +96,10 @@ func BenchmarkTigerTonic_GPlusStatic(b *testing.B) {
 func BenchmarkTraffic_GPlusStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people", nil)
 	benchRequest(b, gplusTraffic, req)
+}
+func BenchmarkGoji_GPlusStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people", nil)
+	benchRequest(b, gplusGoji, req)
 }
 func BenchmarkKocha_GPlusStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people", nil)
@@ -134,6 +140,10 @@ func BenchmarkTraffic_GPlusParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
 	benchRequest(b, gplusTraffic, req)
 }
+func BenchmarkGoji_GPlusParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
+	benchRequest(b, gplusGoji, req)
+}
 func BenchmarkKocha_GPlusParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
 	benchRequest(b, gplusKocha, req)
@@ -173,6 +183,10 @@ func BenchmarkTraffic_GPlus2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
 	benchRequest(b, gplusTraffic, req)
 }
+func BenchmarkGoji_GPlus2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
+	benchRequest(b, gplusGoji, req)
+}
 func BenchmarkKocha_GPlus2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
 	benchRequest(b, gplusKocha, req)
@@ -202,6 +216,9 @@ func BenchmarkTigerTonic_GPlusAll(b *testing.B) {
 }
 func BenchmarkTraffic_GPlusAll(b *testing.B) {
 	benchRoutes(b, gplusTraffic, gplusAPI)
+}
+func BenchmarkGoji_GPlusAll(b *testing.B) {
+	benchRoutes(b, gplusGoji, gplusAPI)
 }
 func BenchmarkKocha_GPlusAll(b *testing.B) {
 	benchRoutes(b, gplusKocha, gplusAPI)

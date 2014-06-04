@@ -64,6 +64,7 @@ var (
 	parsePat         http.Handler
 	parseTigerTonic  http.Handler
 	parseTraffic     http.Handler
+	parseGoji        http.Handler
 	parseKocha       http.Handler
 )
 
@@ -78,6 +79,7 @@ func init() {
 	parsePat = loadPat(parseAPI)
 	parseTigerTonic = loadTigerTonic(parseAPI)
 	parseTraffic = loadTraffic(parseAPI)
+	parseGoji = loadGoji(parseAPI)
 	parseKocha = loadKocha(parseAPI)
 }
 
@@ -114,6 +116,10 @@ func BenchmarkTigerTonic_ParseStatic(b *testing.B) {
 func BenchmarkTraffic_ParseStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/1/users", nil)
 	benchRequest(b, parseTraffic, req)
+}
+func BenchmarkGoji_ParseStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/1/users", nil)
+	benchRequest(b, parseGoji, req)
 }
 func BenchmarkKocha_ParseStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/1/users", nil)
@@ -154,6 +160,10 @@ func BenchmarkTraffic_ParseParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/1/classes/go", nil)
 	benchRequest(b, parseTraffic, req)
 }
+func BenchmarkGoji_ParseParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/1/classes/go", nil)
+	benchRequest(b, parseGoji, req)
+}
 func BenchmarkKocha_ParseParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/1/classes/go", nil)
 	benchRequest(b, parseKocha, req)
@@ -193,6 +203,10 @@ func BenchmarkTraffic_Parse2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/1/classes/go/123456789", nil)
 	benchRequest(b, parseTraffic, req)
 }
+func BenchmarkGoji_Parse2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/1/classes/go/123456789", nil)
+	benchRequest(b, parseGoji, req)
+}
 func BenchmarkKocha_Parse2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/1/classes/go/123456789", nil)
 	benchRequest(b, parseKocha, req)
@@ -222,6 +236,9 @@ func BenchmarkTigerTonic_ParseAll(b *testing.B) {
 }
 func BenchmarkTraffic_ParseAll(b *testing.B) {
 	benchRoutes(b, parseTraffic, parseAPI)
+}
+func BenchmarkGoji_ParseAll(b *testing.B) {
+	benchRoutes(b, parseGoji, parseAPI)
 }
 func BenchmarkKocha_ParseAll(b *testing.B) {
 	benchRoutes(b, parseKocha, parseAPI)
