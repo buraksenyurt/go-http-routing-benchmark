@@ -464,6 +464,14 @@ func BenchmarkHttpRouter_Param20(b *testing.B) {
 	r, _ := http.NewRequest("GET", twentyRoute, nil)
 	benchRequest(b, router, r)
 }
+func BenchmarkHttpTreeMux_Param20(b *testing.B) {
+	router := httptreemux.New()
+	router.GET(twentyPat, httpTreeMuxHandler)
+
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	r.RequestURI = twentyRoute
+	benchRequest(b, router, r)
+}
 func BenchmarkMartini_Param20(b *testing.B) {
 	router := martini.NewRouter()
 	router.Get(twentyPat, martiniHandler)
