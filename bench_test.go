@@ -17,6 +17,7 @@ import (
 	"github.com/gocraft/web"
 	"github.com/gorilla/mux"
 	"github.com/julienschmidt/httprouter"
+	"github.com/naoina/denco"
 	"github.com/naoina/kocha-urlrouter"
 	_ "github.com/naoina/kocha-urlrouter/doublearray"
 	"github.com/pilu/traffic"
@@ -345,6 +346,74 @@ func loadKocha(routes []route) *kochaHandler {
 	return handler
 }
 
+// Denco
+type dencoHandler struct {
+	routerMap map[string]*denco.Router
+	params    []denco.Param
+}
+
+func (h *dencoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	router, found := h.routerMap[r.Method]
+	if !found {
+		panic("Unknown HTTP method: " + r.Method)
+	}
+	meth, params, found := router.Lookup(r.URL.Path)
+	if !found {
+		panic("Router not found: " + r.URL.Path)
+	}
+	h.params = params
+	meth.(http.HandlerFunc).ServeHTTP(w, r)
+}
+
+func (h *dencoHandler) Get(w http.ResponseWriter, r *http.Request)    {}
+func (h *dencoHandler) Post(w http.ResponseWriter, r *http.Request)   {}
+func (h *dencoHandler) Put(w http.ResponseWriter, r *http.Request)    {}
+func (h *dencoHandler) Patch(w http.ResponseWriter, r *http.Request)  {}
+func (h *dencoHandler) Delete(w http.ResponseWriter, r *http.Request) {}
+func (h *dencoHandler) dencoHandlerWrite(w http.ResponseWriter, r *http.Request) {
+	var name string
+	for _, param := range h.params {
+		if param.Name == "name" {
+			name = param.Value
+			break
+		}
+	}
+	io.WriteString(w, name)
+}
+
+func loadDenco(routes []route) *dencoHandler {
+	handler := &dencoHandler{routerMap: map[string]*denco.Router{
+		"GET":    denco.New(),
+		"POST":   denco.New(),
+		"PUT":    denco.New(),
+		"PATCH":  denco.New(),
+		"DELETE": denco.New(),
+	}}
+	recordMap := make(map[string][]denco.Record)
+	for _, route := range routes {
+		var f http.HandlerFunc
+		switch route.method {
+		case "GET":
+			f = handler.Get
+		case "POST":
+			f = handler.Post
+		case "PUT":
+			f = handler.Put
+		case "PATCH":
+			f = handler.Patch
+		case "DELETE":
+			f = handler.Delete
+		}
+		recordMap[route.method] = append(recordMap[route.method], denco.NewRecord(route.path, f))
+	}
+	for method, records := range recordMap {
+		if err := handler.routerMap[method].Build(records); err != nil {
+			panic(err)
+		}
+	}
+	return handler
+}
+
 // Micro Benchmarks
 
 // Route with Param (no write)
@@ -431,6 +500,18 @@ func BenchmarkKocha_Param(b *testing.B) {
 	}}
 	if err := handler.routerMap["GET"].Build([]urlrouter.Record{
 		urlrouter.NewRecord("/user/:name", http.HandlerFunc(handler.Get)),
+	}); err != nil {
+		panic(err)
+	}
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, handler, r)
+}
+func BenchmarkDenco_Param(b *testing.B) {
+	handler := &dencoHandler{routerMap: map[string]*denco.Router{
+		"GET": denco.New(),
+	}}
+	if err := handler.routerMap["GET"].Build([]denco.Record{
+		denco.NewRecord("/user/:name", http.HandlerFunc(handler.Get)),
 	}); err != nil {
 		panic(err)
 	}
@@ -530,6 +611,18 @@ func BenchmarkKocha_Param20(b *testing.B) {
 	r, _ := http.NewRequest("GET", twentyRoute, nil)
 	benchRequest(b, handler, r)
 }
+func BenchmarkDenco_Param20(b *testing.B) {
+	handler := &dencoHandler{routerMap: map[string]*denco.Router{
+		"GET": denco.New(),
+	}}
+	if err := handler.routerMap["GET"].Build([]denco.Record{
+		denco.NewRecord(twentyPat, http.HandlerFunc(handler.Get)),
+	}); err != nil {
+		panic(err)
+	}
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, handler, r)
+}
 
 // Route with Param and write
 func BenchmarkGocraftWeb_ParamWrite(b *testing.B) {
@@ -604,6 +697,18 @@ func BenchmarkKocha_ParamWrite(b *testing.B) {
 	}}
 	if err := handler.routerMap["GET"].Build([]urlrouter.Record{
 		urlrouter.NewRecord("/user/:name", http.HandlerFunc(handler.kochaHandlerWrite)),
+	}); err != nil {
+		panic(err)
+	}
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, handler, r)
+}
+func BenchmarkDenco_ParamWrite(b *testing.B) {
+	handler := &dencoHandler{routerMap: map[string]*denco.Router{
+		"GET": denco.New(),
+	}}
+	if err := handler.routerMap["GET"].Build([]denco.Record{
+		denco.NewRecord("/user/:name", http.HandlerFunc(handler.dencoHandlerWrite)),
 	}); err != nil {
 		panic(err)
 	}

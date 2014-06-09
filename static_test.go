@@ -182,6 +182,7 @@ var (
 	staticTraffic     http.Handler
 	staticGoji        http.Handler
 	staticKocha       http.Handler
+	staticDenco       http.Handler
 )
 
 func init() {
@@ -203,6 +204,7 @@ func init() {
 	staticTraffic = loadTraffic(staticRoutes)
 	staticGoji = loadGoji(staticRoutes)
 	staticKocha = loadKocha(staticRoutes)
+	staticDenco = loadDenco(staticRoutes)
 }
 
 // All routes
@@ -238,4 +240,7 @@ func BenchmarkGoji_StaticAll(b *testing.B) {
 }
 func BenchmarkKocha_StaticAll(b *testing.B) {
 	benchRoutes(b, staticKocha, staticRoutes)
+}
+func BenchmarkDenco_StaticAll(b *testing.B) {
+	benchRoutes(b, staticDenco, staticRoutes)
 }

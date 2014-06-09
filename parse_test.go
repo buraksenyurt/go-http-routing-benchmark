@@ -66,6 +66,7 @@ var (
 	parseTraffic     http.Handler
 	parseGoji        http.Handler
 	parseKocha       http.Handler
+	parseDenco       http.Handler
 )
 
 func init() {
@@ -81,6 +82,7 @@ func init() {
 	parseTraffic = loadTraffic(parseAPI)
 	parseGoji = loadGoji(parseAPI)
 	parseKocha = loadKocha(parseAPI)
+	parseDenco = loadDenco(parseAPI)
 }
 
 // Static
@@ -125,6 +127,10 @@ func BenchmarkKocha_ParseStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/1/users", nil)
 	benchRequest(b, parseKocha, req)
 }
+func BenchmarkDenco_ParseStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/1/users", nil)
+	benchRequest(b, parseDenco, req)
+}
 
 // One Param
 func BenchmarkGocraftWeb_ParseParam(b *testing.B) {
@@ -167,6 +173,10 @@ func BenchmarkGoji_ParseParam(b *testing.B) {
 func BenchmarkKocha_ParseParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/1/classes/go", nil)
 	benchRequest(b, parseKocha, req)
+}
+func BenchmarkDenco_ParseParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/1/classes/go", nil)
+	benchRequest(b, parseDenco, req)
 }
 
 // Two Params
@@ -211,6 +221,10 @@ func BenchmarkKocha_Parse2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/1/classes/go/123456789", nil)
 	benchRequest(b, parseKocha, req)
 }
+func BenchmarkDenco_Parse2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/1/classes/go/123456789", nil)
+	benchRequest(b, parseDenco, req)
+}
 
 // All Routes
 func BenchmarkGocraftWeb_ParseAll(b *testing.B) {
@@ -242,4 +256,7 @@ func BenchmarkGoji_ParseAll(b *testing.B) {
 }
 func BenchmarkKocha_ParseAll(b *testing.B) {
 	benchRoutes(b, parseKocha, parseAPI)
+}
+func BenchmarkDenco_ParseAll(b *testing.B) {
+	benchRoutes(b, parseDenco, parseAPI)
 }

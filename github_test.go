@@ -284,6 +284,7 @@ var (
 	githubTraffic     http.Handler
 	githubGoji        http.Handler
 	githubKocha       http.Handler
+	githubDenco       http.Handler
 )
 
 func init() {
@@ -299,6 +300,7 @@ func init() {
 	githubTraffic = loadTraffic(githubAPI)
 	githubGoji = loadGoji(githubAPI)
 	githubKocha = loadKocha(githubAPI)
+	githubDenco = loadDenco(githubAPI)
 }
 
 // Static
@@ -339,10 +341,13 @@ func BenchmarkGoji_GithubStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/user/repos", nil)
 	benchRequest(b, githubGoji, req)
 }
-
 func BenchmarkKocha_GithubStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/user/repos", nil)
 	benchRequest(b, githubKocha, req)
+}
+func BenchmarkDenco_GithubStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/user/repos", nil)
+	benchRequest(b, githubDenco, req)
 }
 
 // Param
@@ -387,6 +392,10 @@ func BenchmarkKocha_GithubParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/repos/julienschmidt/httprouter/stargazers", nil)
 	benchRequest(b, githubKocha, req)
 }
+func BenchmarkDenco_GithubParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/repos/julienschmidt/httprouter/stargazers", nil)
+	benchRequest(b, githubDenco, req)
+}
 
 // All routes
 func BenchmarkGocraftWeb_GithubAll(b *testing.B) {
@@ -418,4 +427,7 @@ func BenchmarkGoji_GithubAll(b *testing.B) {
 }
 func BenchmarkKocha_GithubAll(b *testing.B) {
 	benchRoutes(b, githubKocha, githubAPI)
+}
+func BenchmarkDenco_GithubAll(b *testing.B) {
+	benchRoutes(b, githubDenco, githubAPI)
 }
