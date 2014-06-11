@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"revel"
 	"testing"
 
 	"github.com/bmizerany/pat"
@@ -414,6 +415,65 @@ func loadDenco(routes []route) *dencoHandler {
 	return handler
 }
 
+// Revel
+type revelHandler struct {
+	router  *revel.Router
+	params  map[string][]string
+	methods map[string]http.HandlerFunc
+}
+
+func newRevelHandler(router *revel.Router) *revelHandler {
+	return &revelHandler{
+		router:  router,
+		methods: make(map[string]http.HandlerFunc),
+	}
+}
+
+func (h *revelHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	match := h.router.Route(r)
+	if match == nil {
+		panic("Route not found: " + r.URL.Path)
+	}
+	h.params = match.Params
+	h.methods[match.ControllerName+"."+match.MethodName].ServeHTTP(w, r)
+}
+
+func (h *revelHandler) Get(w http.ResponseWriter, r *http.Request)    {}
+func (h *revelHandler) Post(w http.ResponseWriter, r *http.Request)   {}
+func (h *revelHandler) Put(w http.ResponseWriter, r *http.Request)    {}
+func (h *revelHandler) Patch(w http.ResponseWriter, r *http.Request)  {}
+func (h *revelHandler) Delete(w http.ResponseWriter, r *http.Request) {}
+func (h *revelHandler) revelHandlerWrite(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, h.params["name"][0])
+}
+
+func loadRevel(routes []route) *revelHandler {
+	router := revel.NewRouter("")
+	handler := newRevelHandler(router)
+	for _, r := range routes {
+		var f http.HandlerFunc
+		switch r.method {
+		case "GET":
+			f = handler.Get
+		case "POST":
+			f = handler.Post
+		case "PUT":
+			f = handler.Put
+		case "PATCH":
+			f = handler.Patch
+		case "DELETE":
+			f = handler.Delete
+		}
+		action := "revel." + r.method
+		handler.methods[action] = f
+		route := revel.NewRoute(r.method, r.path, action, "", "", 0)
+		if err := router.Tree.Add(route.TreePath, route); err != nil {
+			panic(err)
+		}
+	}
+	return handler
+}
+
 // Micro Benchmarks
 
 // Route with Param (no write)
@@ -515,6 +575,17 @@ func BenchmarkDenco_Param(b *testing.B) {
 	}); err != nil {
 		panic(err)
 	}
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, handler, r)
+}
+func BenchmarkRevel_Param(b *testing.B) {
+	router := revel.NewRouter("")
+	route := revel.NewRoute("GET", "/user/:name", "revel.GET", "", "", 0)
+	if err := router.Tree.Add(route.TreePath, route); err != nil {
+		panic(err)
+	}
+	handler := newRevelHandler(router)
+	handler.methods["revel.GET"] = handler.Get
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
 	benchRequest(b, handler, r)
 }
@@ -623,6 +694,17 @@ func BenchmarkDenco_Param20(b *testing.B) {
 	r, _ := http.NewRequest("GET", twentyRoute, nil)
 	benchRequest(b, handler, r)
 }
+func BenchmarkRevel_Param20(b *testing.B) {
+	router := revel.NewRouter("")
+	route := revel.NewRoute("GET", twentyPat, "revel.GET", "", "", 0)
+	if err := router.Tree.Add(route.TreePath, route); err != nil {
+		panic(err)
+	}
+	handler := newRevelHandler(router)
+	handler.methods["revel.GET"] = handler.Get
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, handler, r)
+}
 
 // Route with Param and write
 func BenchmarkGocraftWeb_ParamWrite(b *testing.B) {
@@ -712,6 +794,17 @@ func BenchmarkDenco_ParamWrite(b *testing.B) {
 	}); err != nil {
 		panic(err)
 	}
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, handler, r)
+}
+func BenchmarkRevel_ParamWrite(b *testing.B) {
+	router := revel.NewRouter("")
+	route := revel.NewRoute("GET", "/user/:name", "revel.GET", "", "", 0)
+	if err := router.Tree.Add(route.TreePath, route); err != nil {
+		panic(err)
+	}
+	handler := newRevelHandler(router)
+	handler.methods["revel.GET"] = handler.revelHandlerWrite
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
 	benchRequest(b, handler, r)
 }
