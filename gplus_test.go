@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-package benchmark
+package main
 
 import (
 	"net/http"
@@ -36,41 +36,91 @@ var gplusAPI = []route{
 }
 
 var (
+	gplusBeego       http.Handler
+	gplusDenco       http.Handler
 	gplusGocraftWeb  http.Handler
+	gplusGoji        http.Handler
+	gplusGoJsonRest  http.Handler
 	gplusGorillaMux  http.Handler
 	gplusHttpRouter  http.Handler
 	gplusHttpTreeMux http.Handler
+	gplusKocha       http.Handler
 	gplusMartini     http.Handler
 	gplusPat         http.Handler
+	gplusRevel       http.Handler
 	gplusTigerTonic  http.Handler
 	gplusTraffic     http.Handler
-	gplusGoji        http.Handler
-	gplusKocha       http.Handler
-	gplusDenco       http.Handler
-	gplusRevel       http.Handler
 )
 
 func init() {
 	println("#GPlusAPI Routes:", len(gplusAPI))
 
-	gplusGocraftWeb = loadGocraftWeb(gplusAPI)
-	gplusGorillaMux = loadGorillaMux(gplusAPI)
-	gplusHttpRouter = loadHttpRouter(gplusAPI)
-	gplusHttpTreeMux = loadHttpTreeMux(gplusAPI)
-	gplusMartini = loadMartini(gplusAPI)
-	gplusPat = loadPat(gplusAPI)
-	gplusTigerTonic = loadTigerTonic(gplusAPI)
-	gplusTraffic = loadTraffic(gplusAPI)
-	gplusGoji = loadGoji(gplusAPI)
-	gplusKocha = loadKocha(gplusAPI)
-	gplusDenco = loadDenco(gplusAPI)
-	gplusRevel = loadRevel(gplusAPI)
+	calcMem("Beego", func() {
+		gplusBeego = loadBeego(gplusAPI)
+	})
+	calcMem("Denco", func() {
+		gplusDenco = loadDenco(gplusAPI)
+	})
+	calcMem("GocraftWeb", func() {
+		gplusGocraftWeb = loadGocraftWeb(gplusAPI)
+	})
+	calcMem("Goji", func() {
+		gplusGoji = loadGoji(gplusAPI)
+	})
+	calcMem("GoJsonRest", func() {
+		gplusGoJsonRest = loadGoJsonRest(gplusAPI)
+	})
+	calcMem("GorillaMux", func() {
+		gplusGorillaMux = loadGorillaMux(gplusAPI)
+	})
+	calcMem("HttpRouter", func() {
+		gplusHttpRouter = loadHttpRouter(gplusAPI)
+	})
+	calcMem("HttpTreeMux", func() {
+		gplusHttpTreeMux = loadHttpTreeMux(gplusAPI)
+	})
+	calcMem("Kocha", func() {
+		gplusKocha = loadKocha(gplusAPI)
+	})
+	calcMem("Martini", func() {
+		gplusMartini = loadMartini(gplusAPI)
+	})
+	calcMem("Pat", func() {
+		gplusPat = loadPat(gplusAPI)
+	})
+	calcMem("Revel", func() {
+		gplusRevel = loadRevel(gplusAPI)
+	})
+	calcMem("TigerTonic", func() {
+		gplusTigerTonic = loadTigerTonic(gplusAPI)
+	})
+	calcMem("Traffic", func() {
+		gplusTraffic = loadTraffic(gplusAPI)
+	})
+
+	println()
 }
 
 // Static
+func BenchmarkBeego_GPlusStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people", nil)
+	benchRequest(b, gplusBeego, req)
+}
+func BenchmarkDenco_GPlusStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people", nil)
+	benchRequest(b, gplusDenco, req)
+}
 func BenchmarkGocraftWeb_GPlusStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people", nil)
 	benchRequest(b, gplusGocraftWeb, req)
+}
+func BenchmarkGoji_GPlusStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people", nil)
+	benchRequest(b, gplusGoji, req)
+}
+func BenchmarkGoJsonRest_GPlusStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people", nil)
+	benchRequest(b, gplusGoJsonRest, req)
 }
 func BenchmarkGorillaMux_GPlusStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people", nil)
@@ -82,8 +132,11 @@ func BenchmarkHttpRouter_GPlusStatic(b *testing.B) {
 }
 func BenchmarkHttpTreeMux_GPlusStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people", nil)
-	req.RequestURI = "/people"
 	benchRequest(b, gplusHttpTreeMux, req)
+}
+func BenchmarkKocha_GPlusStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people", nil)
+	benchRequest(b, gplusKocha, req)
 }
 func BenchmarkMartini_GPlusStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people", nil)
@@ -93,6 +146,10 @@ func BenchmarkPat_GPlusStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people", nil)
 	benchRequest(b, gplusPat, req)
 }
+func BenchmarkRevel_GPlusStatic(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people", nil)
+	benchRequest(b, gplusRevel, req)
+}
 func BenchmarkTigerTonic_GPlusStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people", nil)
 	benchRequest(b, gplusTigerTonic, req)
@@ -101,27 +158,27 @@ func BenchmarkTraffic_GPlusStatic(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people", nil)
 	benchRequest(b, gplusTraffic, req)
 }
-func BenchmarkGoji_GPlusStatic(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people", nil)
-	benchRequest(b, gplusGoji, req)
-}
-func BenchmarkKocha_GPlusStatic(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people", nil)
-	benchRequest(b, gplusKocha, req)
-}
-func BenchmarkDenco_GPlusStatic(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people", nil)
-	benchRequest(b, gplusDenco, req)
-}
-func BenchmarkRevel_GPlusStatic(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people", nil)
-	benchRequest(b, gplusRevel, req)
-}
 
 // One Param
+func BenchmarkBeego_GPlusParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
+	benchRequest(b, gplusBeego, req)
+}
+func BenchmarkDenco_GPlusParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
+	benchRequest(b, gplusDenco, req)
+}
 func BenchmarkGocraftWeb_GPlusParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
 	benchRequest(b, gplusGocraftWeb, req)
+}
+func BenchmarkGoji_GPlusParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
+	benchRequest(b, gplusGoji, req)
+}
+func BenchmarkGoJsonRest_GPlusParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
+	benchRequest(b, gplusGoJsonRest, req)
 }
 func BenchmarkGorillaMux_GPlusParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
@@ -133,8 +190,11 @@ func BenchmarkHttpRouter_GPlusParam(b *testing.B) {
 }
 func BenchmarkHttpTreeMux_GPlusParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
-	req.RequestURI = "/people/118051310819094153327"
 	benchRequest(b, gplusHttpTreeMux, req)
+}
+func BenchmarkKocha_GPlusParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
+	benchRequest(b, gplusKocha, req)
 }
 func BenchmarkMartini_GPlusParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
@@ -144,6 +204,10 @@ func BenchmarkPat_GPlusParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
 	benchRequest(b, gplusPat, req)
 }
+func BenchmarkRevel_GPlusParam(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
+	benchRequest(b, gplusRevel, req)
+}
 func BenchmarkTigerTonic_GPlusParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
 	benchRequest(b, gplusTigerTonic, req)
@@ -152,27 +216,27 @@ func BenchmarkTraffic_GPlusParam(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
 	benchRequest(b, gplusTraffic, req)
 }
-func BenchmarkGoji_GPlusParam(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
-	benchRequest(b, gplusGoji, req)
-}
-func BenchmarkKocha_GPlusParam(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
-	benchRequest(b, gplusKocha, req)
-}
-func BenchmarkDenco_GPlusParam(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
-	benchRequest(b, gplusDenco, req)
-}
-func BenchmarkRevel_GPlusParam(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people/118051310819094153327", nil)
-	benchRequest(b, gplusRevel, req)
-}
 
 // Two Params
+func BenchmarkBeego_GPlus2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
+	benchRequest(b, gplusBeego, req)
+}
+func BenchmarkDenco_GPlus2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
+	benchRequest(b, gplusDenco, req)
+}
 func BenchmarkGocraftWeb_GPlus2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
 	benchRequest(b, gplusGocraftWeb, req)
+}
+func BenchmarkGoji_GPlus2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
+	benchRequest(b, gplusGoji, req)
+}
+func BenchmarkGoJsonRest_GPlus2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
+	benchRequest(b, gplusGoJsonRest, req)
 }
 func BenchmarkGorillaMux_GPlus2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
@@ -184,8 +248,11 @@ func BenchmarkHttpRouter_GPlus2Params(b *testing.B) {
 }
 func BenchmarkHttpTreeMux_GPlus2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
-	req.RequestURI = "/people/118051310819094153327/activities/123456789"
 	benchRequest(b, gplusHttpTreeMux, req)
+}
+func BenchmarkKocha_GPlus2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
+	benchRequest(b, gplusKocha, req)
 }
 func BenchmarkMartini_GPlus2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
@@ -195,6 +262,10 @@ func BenchmarkPat_GPlus2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
 	benchRequest(b, gplusPat, req)
 }
+func BenchmarkRevel_GPlus2Params(b *testing.B) {
+	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
+	benchRequest(b, gplusRevel, req)
+}
 func BenchmarkTigerTonic_GPlus2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
 	benchRequest(b, gplusTigerTonic, req)
@@ -203,26 +274,22 @@ func BenchmarkTraffic_GPlus2Params(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
 	benchRequest(b, gplusTraffic, req)
 }
-func BenchmarkGoji_GPlus2Params(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
-	benchRequest(b, gplusGoji, req)
-}
-func BenchmarkKocha_GPlus2Params(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
-	benchRequest(b, gplusKocha, req)
-}
-func BenchmarkDenco_GPlus2Params(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
-	benchRequest(b, gplusDenco, req)
-}
-func BenchmarkRevel_GPlus2Params(b *testing.B) {
-	req, _ := http.NewRequest("GET", "/people/118051310819094153327/activities/123456789", nil)
-	benchRequest(b, gplusRevel, req)
-}
 
 // All Routes
+func BenchmarkBeego_GPlusAll(b *testing.B) {
+	benchRoutes(b, gplusBeego, gplusAPI)
+}
+func BenchmarkDenco_GPlusAll(b *testing.B) {
+	benchRoutes(b, gplusDenco, gplusAPI)
+}
 func BenchmarkGocraftWeb_GPlusAll(b *testing.B) {
 	benchRoutes(b, gplusGocraftWeb, gplusAPI)
+}
+func BenchmarkGoji_GPlusAll(b *testing.B) {
+	benchRoutes(b, gplusGoji, gplusAPI)
+}
+func BenchmarkGoJsonRest_GPlusAll(b *testing.B) {
+	benchRoutes(b, gplusGoJsonRest, gplusAPI)
 }
 func BenchmarkGorillaMux_GPlusAll(b *testing.B) {
 	benchRoutes(b, gplusGorillaMux, gplusAPI)
@@ -233,27 +300,21 @@ func BenchmarkHttpRouter_GPlusAll(b *testing.B) {
 func BenchmarkHttpTreeMux_GPlusAll(b *testing.B) {
 	benchRoutes(b, gplusHttpTreeMux, gplusAPI)
 }
+func BenchmarkKocha_GPlusAll(b *testing.B) {
+	benchRoutes(b, gplusKocha, gplusAPI)
+}
 func BenchmarkMartini_GPlusAll(b *testing.B) {
 	benchRoutes(b, gplusMartini, gplusAPI)
 }
 func BenchmarkPat_GPlusAll(b *testing.B) {
 	benchRoutes(b, gplusPat, gplusAPI)
 }
+func BenchmarkRevel_GPlusAll(b *testing.B) {
+	benchRoutes(b, gplusRevel, gplusAPI)
+}
 func BenchmarkTigerTonic_GPlusAll(b *testing.B) {
 	benchRoutes(b, gplusTigerTonic, gplusAPI)
 }
 func BenchmarkTraffic_GPlusAll(b *testing.B) {
 	benchRoutes(b, gplusTraffic, gplusAPI)
-}
-func BenchmarkGoji_GPlusAll(b *testing.B) {
-	benchRoutes(b, gplusGoji, gplusAPI)
-}
-func BenchmarkKocha_GPlusAll(b *testing.B) {
-	benchRoutes(b, gplusKocha, gplusAPI)
-}
-func BenchmarkDenco_GPlusAll(b *testing.B) {
-	benchRoutes(b, gplusDenco, gplusAPI)
-}
-func BenchmarkRevel_GPlusAll(b *testing.B) {
-	benchRoutes(b, gplusRevel, gplusAPI)
 }

@@ -2,59 +2,36 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-package benchmark
+package main
 
 import (
-	"io"
-	"log"
 	"net/http"
-	"regexp"
-	"revel"
+	"runtime"
 	"testing"
-
-	"github.com/bmizerany/pat"
-	"github.com/codegangsta/martini"
-	"github.com/dimfeld/httptreemux"
-	"github.com/gocraft/web"
-	"github.com/gorilla/mux"
-	"github.com/julienschmidt/httprouter"
-	"github.com/naoina/denco"
-	"github.com/naoina/kocha-urlrouter"
-	_ "github.com/naoina/kocha-urlrouter/doublearray"
-	"github.com/pilu/traffic"
-	"github.com/rcrowley/go-tigertonic"
-	goji "github.com/zenazn/goji/web"
 )
 
-type route struct {
-	method string
-	path   string
-}
+func calcMem(name string, load func()) {
+	m := new(runtime.MemStats)
 
-type mockResponseWriter struct{}
+	// before
+	runtime.GC()
+	runtime.ReadMemStats(m)
+	before := m.HeapAlloc
 
-func (m *mockResponseWriter) Header() (h http.Header) {
-	return http.Header{}
-}
+	load()
 
-func (m *mockResponseWriter) Write(p []byte) (n int, err error) {
-	return len(p), nil
-}
-
-func (m *mockResponseWriter) WriteString(s string) (n int, err error) {
-	return len(s), nil
-}
-
-func (m *mockResponseWriter) WriteHeader(int) {}
-
-func init() {
-	log.SetOutput(new(mockResponseWriter))
+	// after
+	runtime.GC()
+	runtime.ReadMemStats(m)
+	after := m.HeapAlloc
+	println("   "+name+":", after-before, "Bytes")
 }
 
 func benchRequest(b *testing.B, router http.Handler, r *http.Request) {
 	w := new(mockResponseWriter)
 	u := r.URL
 	rq := u.RawQuery
+	r.RequestURI = u.RequestURI()
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -85,726 +62,405 @@ func benchRoutes(b *testing.B, router http.Handler, routes []route) {
 	}
 }
 
-// Common
-func httpHandlerFunc(w http.ResponseWriter, r *http.Request) {}
-
-// gocraft/web
-type gocraftWebContext struct{}
-
-func gocraftWebHandler(w web.ResponseWriter, r *web.Request) {}
-
-func gocraftWebHandlerWrite(w web.ResponseWriter, r *web.Request) {
-	io.WriteString(w, r.PathParams["name"])
-}
-
-func loadGocraftWeb(routes []route) *web.Router {
-	router := web.New(gocraftWebContext{})
-	for _, route := range routes {
-		switch route.method {
-		case "GET":
-			router.Get(route.path, gocraftWebHandler)
-		case "POST":
-			router.Post(route.path, gocraftWebHandler)
-		case "PUT":
-			router.Put(route.path, gocraftWebHandler)
-		case "PATCH":
-			router.Patch(route.path, gocraftWebHandler)
-		case "DELETE":
-			router.Delete(route.path, gocraftWebHandler)
-		default:
-			panic("Unknow HTTP method: " + route.method)
-		}
-	}
-	return router
-}
-
-// gorilla/mux
-func gorillaHandlerWrite(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	io.WriteString(w, params["name"])
-}
-
-func loadGorillaMux(routes []route) *mux.Router {
-	re := regexp.MustCompile(":([^/]*)")
-	m := mux.NewRouter()
-	for _, route := range routes {
-		m.HandleFunc(re.ReplaceAllString(route.path, "{$1}"), httpHandlerFunc).Methods(route.method)
-	}
-	return m
-}
-
-// HttpRouter
-func httpRouterHandle(w http.ResponseWriter, r *http.Request, _ map[string]string) {}
-
-func httpRouterHandleWrite(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	io.WriteString(w, vars["name"])
-}
-
-func loadHttpRouter(routes []route) *httprouter.Router {
-	router := httprouter.New()
-	for _, route := range routes {
-		router.Handle(route.method, route.path, httpRouterHandle)
-	}
-	return router
-}
-
-// httpTreeMux
-
-func httpTreeMuxHandlerWrite(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	io.WriteString(w, vars["name"])
-}
-
-func httpTreeMuxHandler(w http.ResponseWriter, r *http.Request, vars map[string]string) {}
-
-func loadHttpTreeMux(routes []route) *httptreemux.TreeMux {
-	router := httptreemux.New()
-	for _, route := range routes {
-		router.Handle(route.method, route.path, httpTreeMuxHandler)
-	}
-	return router
-}
-
-// Martini
-func martiniHandler() {}
-
-func martiniHandlerWrite(params martini.Params) string {
-	return params["name"]
-}
-
-func loadMartini(routes []route) *martini.Martini {
-	router := martini.NewRouter()
-	for _, route := range routes {
-		switch route.method {
-		case "GET":
-			router.Get(route.path, martiniHandler)
-		case "POST":
-			router.Post(route.path, martiniHandler)
-		case "PUT":
-			router.Put(route.path, martiniHandler)
-		case "PATCH":
-			router.Patch(route.path, martiniHandler)
-		case "DELETE":
-			router.Delete(route.path, martiniHandler)
-		default:
-			panic("Unknow HTTP method: " + route.method)
-		}
-	}
-	martini := martini.New()
-	martini.Action(router.Handle)
-	return martini
-}
-
-// pat
-func patHandlerWrite(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, r.URL.Query().Get(":name"))
-}
-
-func loadPat(routes []route) *pat.PatternServeMux {
-	m := pat.New()
-	for _, route := range routes {
-		switch route.method {
-		case "GET":
-			m.Get(route.path, http.HandlerFunc(httpHandlerFunc))
-		case "POST":
-			m.Post(route.path, http.HandlerFunc(httpHandlerFunc))
-		case "PUT":
-			m.Put(route.path, http.HandlerFunc(httpHandlerFunc))
-		case "DELETE":
-			m.Del(route.path, http.HandlerFunc(httpHandlerFunc))
-		default:
-			panic("Unknow HTTP method: " + route.method)
-		}
-	}
-	return m
-}
-
-// Tiger Tonic
-func tigerTonicHandlerWrite(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, r.URL.Query().Get("name"))
-}
-
-func loadTigerTonic(routes []route) *tigertonic.TrieServeMux {
-	re := regexp.MustCompile(":([^/]*)")
-	mux := tigertonic.NewTrieServeMux()
-	for _, route := range routes {
-		mux.HandleFunc(route.method, re.ReplaceAllString(route.path, "{$1}"), httpHandlerFunc)
-	}
-	return mux
-}
-
-// Traffic
-func trafficHandlerWrite(w traffic.ResponseWriter, r *traffic.Request) {
-	io.WriteString(w, r.URL.Query().Get("name"))
-}
-func trafficHandler(w traffic.ResponseWriter, r *traffic.Request) {}
-
-func loadTraffic(routes []route) *traffic.Router {
-	traffic.SetVar("env", "bench")
-	router := traffic.New()
-	for _, route := range routes {
-		switch route.method {
-		case "GET":
-			router.Get(route.path, trafficHandler)
-		case "POST":
-			router.Post(route.path, trafficHandler)
-		case "PUT":
-			router.Put(route.path, trafficHandler)
-		case "PATCH":
-			router.Patch(route.path, trafficHandler)
-		case "DELETE":
-			router.Delete(route.path, trafficHandler)
-		default:
-			panic("Unknow HTTP method: " + route.method)
-		}
-	}
-	return router
-}
-
-// goji
-func gojiFuncWrite(c goji.C, w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, c.URLParams["name"])
-}
-
-func loadGoji(routes []route) *goji.Mux {
-	router := goji.New()
-	for _, route := range routes {
-		switch route.method {
-		case "GET":
-			router.Get(route.path, httpHandlerFunc)
-		case "POST":
-			router.Post(route.path, httpHandlerFunc)
-		case "PUT":
-			router.Put(route.path, httpHandlerFunc)
-		case "PATCH":
-			router.Patch(route.path, httpHandlerFunc)
-		case "DELETE":
-			router.Delete(route.path, httpHandlerFunc)
-		default:
-			panic("Unknown HTTP method: " + route.method)
-		}
-	}
-	return router
-}
-
-// Kocha-urlrouter
-type kochaHandler struct {
-	routerMap map[string]urlrouter.URLRouter
-	params    []urlrouter.Param
-}
-
-func (h *kochaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	meth, params := h.routerMap[r.Method].Lookup(r.URL.Path)
-	h.params = params
-	meth.(http.HandlerFunc).ServeHTTP(w, r)
-}
-
-func (h *kochaHandler) Get(w http.ResponseWriter, r *http.Request)    {}
-func (h *kochaHandler) Post(w http.ResponseWriter, r *http.Request)   {}
-func (h *kochaHandler) Put(w http.ResponseWriter, r *http.Request)    {}
-func (h *kochaHandler) Patch(w http.ResponseWriter, r *http.Request)  {}
-func (h *kochaHandler) Delete(w http.ResponseWriter, r *http.Request) {}
-func (h *kochaHandler) kochaHandlerWrite(w http.ResponseWriter, r *http.Request) {
-	var name string
-	for _, param := range h.params {
-		if param.Name == "name" {
-			name = param.Value
-			break
-		}
-	}
-	io.WriteString(w, name)
-}
-
-func loadKocha(routes []route) *kochaHandler {
-	handler := &kochaHandler{routerMap: map[string]urlrouter.URLRouter{
-		"GET":    urlrouter.NewURLRouter("doublearray"),
-		"POST":   urlrouter.NewURLRouter("doublearray"),
-		"PUT":    urlrouter.NewURLRouter("doublearray"),
-		"PATCH":  urlrouter.NewURLRouter("doublearray"),
-		"DELETE": urlrouter.NewURLRouter("doublearray"),
-	}}
-	recordMap := make(map[string][]urlrouter.Record)
-	for _, route := range routes {
-		var f http.HandlerFunc
-		switch route.method {
-		case "GET":
-			f = handler.Get
-		case "POST":
-			f = handler.Post
-		case "PUT":
-			f = handler.Put
-		case "PATCH":
-			f = handler.Patch
-		case "DELETE":
-			f = handler.Delete
-		}
-		recordMap[route.method] = append(recordMap[route.method], urlrouter.NewRecord(route.path, f))
-	}
-	for method, records := range recordMap {
-		if err := handler.routerMap[method].Build(records); err != nil {
-			panic(err)
-		}
-	}
-	return handler
-}
-
-// Denco
-type dencoHandler struct {
-	routerMap map[string]*denco.Router
-	params    []denco.Param
-}
-
-func (h *dencoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	router, found := h.routerMap[r.Method]
-	if !found {
-		panic("Unknown HTTP method: " + r.Method)
-	}
-	meth, params, found := router.Lookup(r.URL.Path)
-	if !found {
-		panic("Router not found: " + r.URL.Path)
-	}
-	h.params = params
-	meth.(http.HandlerFunc).ServeHTTP(w, r)
-}
-
-func (h *dencoHandler) Get(w http.ResponseWriter, r *http.Request)    {}
-func (h *dencoHandler) Post(w http.ResponseWriter, r *http.Request)   {}
-func (h *dencoHandler) Put(w http.ResponseWriter, r *http.Request)    {}
-func (h *dencoHandler) Patch(w http.ResponseWriter, r *http.Request)  {}
-func (h *dencoHandler) Delete(w http.ResponseWriter, r *http.Request) {}
-func (h *dencoHandler) dencoHandlerWrite(w http.ResponseWriter, r *http.Request) {
-	var name string
-	for _, param := range h.params {
-		if param.Name == "name" {
-			name = param.Value
-			break
-		}
-	}
-	io.WriteString(w, name)
-}
-
-func loadDenco(routes []route) *dencoHandler {
-	handler := &dencoHandler{routerMap: map[string]*denco.Router{
-		"GET":    denco.New(),
-		"POST":   denco.New(),
-		"PUT":    denco.New(),
-		"PATCH":  denco.New(),
-		"DELETE": denco.New(),
-	}}
-	recordMap := make(map[string][]denco.Record)
-	for _, route := range routes {
-		var f http.HandlerFunc
-		switch route.method {
-		case "GET":
-			f = handler.Get
-		case "POST":
-			f = handler.Post
-		case "PUT":
-			f = handler.Put
-		case "PATCH":
-			f = handler.Patch
-		case "DELETE":
-			f = handler.Delete
-		}
-		recordMap[route.method] = append(recordMap[route.method], denco.NewRecord(route.path, f))
-	}
-	for method, records := range recordMap {
-		if err := handler.routerMap[method].Build(records); err != nil {
-			panic(err)
-		}
-	}
-	return handler
-}
-
-// Revel
-type revelHandler struct {
-	router  *revel.Router
-	params  map[string][]string
-	methods map[string]http.HandlerFunc
-}
-
-func newRevelHandler(router *revel.Router) *revelHandler {
-	return &revelHandler{
-		router:  router,
-		methods: make(map[string]http.HandlerFunc),
-	}
-}
-
-func (h *revelHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	match := h.router.Route(r)
-	if match == nil {
-		panic("Route not found: " + r.URL.Path)
-	}
-	h.params = match.Params
-	h.methods[match.ControllerName+"."+match.MethodName].ServeHTTP(w, r)
-}
-
-func (h *revelHandler) Get(w http.ResponseWriter, r *http.Request)    {}
-func (h *revelHandler) Post(w http.ResponseWriter, r *http.Request)   {}
-func (h *revelHandler) Put(w http.ResponseWriter, r *http.Request)    {}
-func (h *revelHandler) Patch(w http.ResponseWriter, r *http.Request)  {}
-func (h *revelHandler) Delete(w http.ResponseWriter, r *http.Request) {}
-func (h *revelHandler) revelHandlerWrite(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, h.params["name"][0])
-}
-
-func loadRevel(routes []route) *revelHandler {
-	router := revel.NewRouter("")
-	handler := newRevelHandler(router)
-	for _, r := range routes {
-		var f http.HandlerFunc
-		switch r.method {
-		case "GET":
-			f = handler.Get
-		case "POST":
-			f = handler.Post
-		case "PUT":
-			f = handler.Put
-		case "PATCH":
-			f = handler.Patch
-		case "DELETE":
-			f = handler.Delete
-		}
-		action := "revel." + r.method
-		handler.methods[action] = f
-		route := revel.NewRoute(r.method, r.path, action, "", "", 0)
-		if err := router.Tree.Add(route.TreePath, route); err != nil {
-			panic(err)
-		}
-	}
-	return handler
-}
-
 // Micro Benchmarks
 
 // Route with Param (no write)
+func BenchmarkBeego_Param(b *testing.B) {
+	router := loadBeegoSingle("GET", "/user/:name!", beegoHandler)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkDenco_Param(b *testing.B) {
+	handler := new(dencoHandler)
+	router := loadDencoSingle(
+		"GET", "/user/:name",
+		handler, http.HandlerFunc(handler.Get),
+	)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
 func BenchmarkGocraftWeb_Param(b *testing.B) {
-	router := web.New(gocraftWebContext{})
-	router.Get("/user/:name", gocraftWebHandler)
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkGorillaMux_Param(b *testing.B) {
-	router := mux.NewRouter()
-	router.HandleFunc("/user/{name}", httpHandlerFunc).Methods("GET")
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkHttpRouter_Param(b *testing.B) {
-	router := httprouter.New()
-	router.GET("/user/:name", httpRouterHandle)
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, router, r)
-}
-
-func BenchmarkHttpTreeMux_Param(b *testing.B) {
-	router := httptreemux.New()
-	router.GET("/user/:name", httpTreeMuxHandler)
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	r.RequestURI = "/user/gordon"
-	benchRequest(b, router, r)
-}
-
-func BenchmarkMartini_Param(b *testing.B) {
-	router := martini.NewRouter()
-	router.Get("/user/:name", martiniHandler)
-	martini := martini.New()
-	martini.Action(router.Handle)
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, martini, r)
-}
-func BenchmarkPat_Param(b *testing.B) {
-	router := pat.New()
-	router.Get("/user/:name", http.HandlerFunc(httpHandlerFunc))
-
-	w := new(mockResponseWriter)
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		r, _ := http.NewRequest("GET", "/user/gordon", nil)
-		router.ServeHTTP(w, r)
-	}
-
-	//benchRequest(b, router, r)
-}
-func BenchmarkTigerTonic_Param(b *testing.B) {
-	router := tigertonic.NewTrieServeMux()
-	router.HandleFunc("GET", "/user/{name}", httpHandlerFunc)
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkTraffic_Param(b *testing.B) {
-	traffic.SetVar("env", "bench")
-	router := traffic.New()
-	router.Get("/user/:name", trafficHandler)
+	router := loadGocraftWebSingle("GET", "/user/:name", gocraftWebHandler)
 
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
 	benchRequest(b, router, r)
 }
 func BenchmarkGoji_Param(b *testing.B) {
-	router := goji.New()
-	router.Get("/user/:name", httpHandlerFunc)
+	router := loadGojiSingle("GET", "/user/:name", httpHandlerFunc)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGoJsonRest_Param(b *testing.B) {
+	router := loadGoJsonRestSingle("GET", "/user/:name", goJsonRestHandler)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGorillaMux_Param(b *testing.B) {
+	router := loadGorillaMuxSingle("GET", "/user/{name}", httpHandlerFunc)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkHttpRouter_Param(b *testing.B) {
+	router := loadHttpRouterSingle("GET", "/user/:name", httpRouterHandle)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkHttpTreeMux_Param(b *testing.B) {
+	router := loadHttpTreeMuxSingle("GET", "/user/:name", httpTreeMuxHandler)
 
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
 	benchRequest(b, router, r)
 }
 func BenchmarkKocha_Param(b *testing.B) {
-	handler := &kochaHandler{routerMap: map[string]urlrouter.URLRouter{
-		"GET": urlrouter.NewURLRouter("doublearray"),
-	}}
-	if err := handler.routerMap["GET"].Build([]urlrouter.Record{
-		urlrouter.NewRecord("/user/:name", http.HandlerFunc(handler.Get)),
-	}); err != nil {
-		panic(err)
-	}
+	handler := new(kochaHandler)
+	router := loadKochaSingle(
+		"GET", "/user/:name",
+		handler, http.HandlerFunc(handler.Get),
+	)
+
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, handler, r)
+	benchRequest(b, router, r)
 }
-func BenchmarkDenco_Param(b *testing.B) {
-	handler := &dencoHandler{routerMap: map[string]*denco.Router{
-		"GET": denco.New(),
-	}}
-	if err := handler.routerMap["GET"].Build([]denco.Record{
-		denco.NewRecord("/user/:name", http.HandlerFunc(handler.Get)),
-	}); err != nil {
-		panic(err)
-	}
+func BenchmarkMartini_Param(b *testing.B) {
+	router := loadMartiniSingle("GET", "/user/:name", martiniHandler)
+
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, handler, r)
+	benchRequest(b, router, r)
+}
+func BenchmarkPat_Param(b *testing.B) {
+	router := loadPatSingle("GET", "/user/:name", http.HandlerFunc(httpHandlerFunc))
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
 }
 func BenchmarkRevel_Param(b *testing.B) {
-	router := revel.NewRouter("")
-	route := revel.NewRoute("GET", "/user/:name", "revel.GET", "", "", 0)
-	if err := router.Tree.Add(route.TreePath, route); err != nil {
-		panic(err)
-	}
-	handler := newRevelHandler(router)
-	handler.methods["revel.GET"] = handler.Get
+	handler := new(revelHandler)
+	router := loadRevelSingle(
+		"GET", "/user/:name",
+		handler, http.HandlerFunc(handler.Get),
+	)
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkTigerTonic_Param(b *testing.B) {
+	router := loadTigerTonicSingle("GET", "/user/{name}", httpHandlerFunc)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkTraffic_Param(b *testing.B) {
+	router := loadTrafficSingle("GET", "/user/:name", trafficHandler)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+
+// Route with 5 Params (no write)
+const fiveColon = "/:a/:b/:c/:d/:e"
+const fiveBeego = "/:a!/:b!/:c!/:d!/:e!"
+const fiveBrace = "/{a}/{b}/{c}/{d}/{e}"
+const fiveRoute = "/test/test/test/test/test"
+
+func BenchmarkBeego_Param5(b *testing.B) {
+	router := loadBeegoSingle("GET", fiveBeego, beegoHandler)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkDenco_Param5(b *testing.B) {
+	handler := new(dencoHandler)
+	router := loadDencoSingle(
+		"GET", fiveColon,
+		handler, http.HandlerFunc(handler.Get),
+	)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGocraftWeb_Param5(b *testing.B) {
+	router := loadGocraftWebSingle("GET", fiveColon, gocraftWebHandler)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGoji_Param5(b *testing.B) {
+	router := loadGojiSingle("GET", fiveColon, httpHandlerFunc)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGoJsonRest_Param5(b *testing.B) {
+	handler := loadGoJsonRestSingle("GET", fiveColon, goJsonRestHandler)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
 	benchRequest(b, handler, r)
 }
+func BenchmarkGorillaMux_Param5(b *testing.B) {
+	router := loadGorillaMuxSingle("GET", fiveBrace, httpHandlerFunc)
 
-var twentyPat = "/:a/:b/:c/:d/:e/:f/:g/:h/:i/:j/:k/:l/:m/:n/:o/:p/:q/:r/:s/:t"
-var twentyBrace = "/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}/{j}/{k}/{l}/{m}/{n}/{o}/{p}/{q}/{r}/{s}/{t}"
-var twentyRoute = "/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t"
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkHttpRouter_Param5(b *testing.B) {
+	router := loadHttpRouterSingle("GET", fiveColon, httpRouterHandle)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkHttpTreeMux_Param5(b *testing.B) {
+	router := loadHttpTreeMuxSingle("GET", fiveColon, httpTreeMuxHandler)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkKocha_Param5(b *testing.B) {
+	handler := new(kochaHandler)
+	router := loadKochaSingle(
+		"GET", fiveColon,
+		handler, http.HandlerFunc(handler.Get),
+	)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkMartini_Param5(b *testing.B) {
+	router := loadMartiniSingle("GET", fiveColon, martiniHandler)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkPat_Param5(b *testing.B) {
+	router := loadPatSingle("GET", fiveColon, http.HandlerFunc(httpHandlerFunc))
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkRevel_Param5(b *testing.B) {
+	handler := new(revelHandler)
+	router := loadRevelSingle(
+		"GET", fiveColon,
+		handler, http.HandlerFunc(handler.Get),
+	)
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkTigerTonic_Param5(b *testing.B) {
+	router := loadTigerTonicSingle("GET", fiveBrace, httpHandlerFunc)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkTraffic_Param5(b *testing.B) {
+	router := loadTrafficSingle("GET", fiveColon, trafficHandler)
+
+	r, _ := http.NewRequest("GET", fiveRoute, nil)
+	benchRequest(b, router, r)
+}
 
 // Route with 20 Params (no write)
+const twentyColon = "/:a/:b/:c/:d/:e/:f/:g/:h/:i/:j/:k/:l/:m/:n/:o/:p/:q/:r/:s/:t"
+const twentyBeego = "/:a!/:b!/:c!/:d!/:e!/:f!/:g!/:h!/:i!/:j!/:k!/:l!/:m!/:n!/:o!/:p!/:q!/:r!/:s!/:t!"
+const twentyBrace = "/{a}/{b}/{c}/{d}/{e}/{f}/{g}/{h}/{i}/{j}/{k}/{l}/{m}/{n}/{o}/{p}/{q}/{r}/{s}/{t}"
+const twentyRoute = "/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/q/r/s/t"
+
+func BenchmarkBeego_Param20(b *testing.B) {
+	router := loadBeegoSingle("GET", twentyBeego, beegoHandler)
+
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkDenco_Param20(b *testing.B) {
+	handler := new(dencoHandler)
+	router := loadDencoSingle(
+		"GET", twentyColon,
+		handler, http.HandlerFunc(handler.Get),
+	)
+
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, router, r)
+}
 func BenchmarkGocraftWeb_Param20(b *testing.B) {
-	router := web.New(gocraftWebContext{})
-	router.Get(twentyPat, gocraftWebHandler)
-
-	r, _ := http.NewRequest("GET", twentyRoute, nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkGorillaMux_Param20(b *testing.B) {
-	router := mux.NewRouter()
-	router.HandleFunc(twentyBrace, httpHandlerFunc).Methods("GET")
-
-	r, _ := http.NewRequest("GET", twentyRoute, nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkHttpRouter_Param20(b *testing.B) {
-	router := httprouter.New()
-	router.GET(twentyPat, httpRouterHandle)
-
-	r, _ := http.NewRequest("GET", twentyRoute, nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkHttpTreeMux_Param20(b *testing.B) {
-	router := httptreemux.New()
-	router.GET(twentyPat, httpTreeMuxHandler)
-
-	r, _ := http.NewRequest("GET", twentyRoute, nil)
-	r.RequestURI = twentyRoute
-	benchRequest(b, router, r)
-}
-func BenchmarkMartini_Param20(b *testing.B) {
-	router := martini.NewRouter()
-	router.Get(twentyPat, martiniHandler)
-	martini := martini.New()
-	martini.Action(router.Handle)
-
-	r, _ := http.NewRequest("GET", twentyRoute, nil)
-	benchRequest(b, martini, r)
-}
-func BenchmarkPat_Param20(b *testing.B) {
-	router := pat.New()
-	router.Get(twentyPat, http.HandlerFunc(httpHandlerFunc))
-
-	w := new(mockResponseWriter)
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		r, _ := http.NewRequest("GET", twentyRoute, nil)
-		router.ServeHTTP(w, r)
-	}
-
-	//benchRequest(b, router, r)
-}
-func BenchmarkTigerTonic_Param20(b *testing.B) {
-	router := tigertonic.NewTrieServeMux()
-	router.HandleFunc("GET", twentyBrace, httpHandlerFunc)
-
-	r, _ := http.NewRequest("GET", twentyRoute, nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkTraffic_Param20(b *testing.B) {
-	traffic.SetVar("env", "bench")
-	router := traffic.New()
-	router.Get(twentyPat, trafficHandler)
+	router := loadGocraftWebSingle("GET", twentyColon, gocraftWebHandler)
 
 	r, _ := http.NewRequest("GET", twentyRoute, nil)
 	benchRequest(b, router, r)
 }
 func BenchmarkGoji_Param20(b *testing.B) {
-	router := goji.New()
-	router.Get(twentyPat, httpHandlerFunc)
+	router := loadGojiSingle("GET", twentyColon, httpHandlerFunc)
+
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGoJsonRest_Param20(b *testing.B) {
+	handler := loadGoJsonRestSingle("GET", twentyColon, goJsonRestHandler)
+
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, handler, r)
+}
+func BenchmarkGorillaMux_Param20(b *testing.B) {
+	router := loadGorillaMuxSingle("GET", twentyBrace, httpHandlerFunc)
+
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkHttpRouter_Param20(b *testing.B) {
+	router := loadHttpRouterSingle("GET", twentyColon, httpRouterHandle)
+
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkHttpTreeMux_Param20(b *testing.B) {
+	router := loadHttpTreeMuxSingle("GET", twentyColon, httpTreeMuxHandler)
 
 	r, _ := http.NewRequest("GET", twentyRoute, nil)
 	benchRequest(b, router, r)
 }
 func BenchmarkKocha_Param20(b *testing.B) {
-	handler := &kochaHandler{routerMap: map[string]urlrouter.URLRouter{
-		"GET": urlrouter.NewURLRouter("doublearray"),
-	}}
-	if err := handler.routerMap["GET"].Build([]urlrouter.Record{
-		urlrouter.NewRecord(twentyPat, http.HandlerFunc(handler.Get)),
-	}); err != nil {
-		panic(err)
-	}
+	handler := new(kochaHandler)
+	router := loadKochaSingle(
+		"GET", twentyColon,
+		handler, http.HandlerFunc(handler.Get),
+	)
+
 	r, _ := http.NewRequest("GET", twentyRoute, nil)
-	benchRequest(b, handler, r)
+	benchRequest(b, router, r)
 }
-func BenchmarkDenco_Param20(b *testing.B) {
-	handler := &dencoHandler{routerMap: map[string]*denco.Router{
-		"GET": denco.New(),
-	}}
-	if err := handler.routerMap["GET"].Build([]denco.Record{
-		denco.NewRecord(twentyPat, http.HandlerFunc(handler.Get)),
-	}); err != nil {
-		panic(err)
-	}
+func BenchmarkMartini_Param20(b *testing.B) {
+	router := loadMartiniSingle("GET", twentyColon, martiniHandler)
+
 	r, _ := http.NewRequest("GET", twentyRoute, nil)
-	benchRequest(b, handler, r)
+	benchRequest(b, router, r)
+}
+func BenchmarkPat_Param20(b *testing.B) {
+	router := loadPatSingle("GET", twentyColon, http.HandlerFunc(httpHandlerFunc))
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
 }
 func BenchmarkRevel_Param20(b *testing.B) {
-	router := revel.NewRouter("")
-	route := revel.NewRoute("GET", twentyPat, "revel.GET", "", "", 0)
-	if err := router.Tree.Add(route.TreePath, route); err != nil {
-		panic(err)
-	}
-	handler := newRevelHandler(router)
-	handler.methods["revel.GET"] = handler.Get
+	handler := new(revelHandler)
+	router := loadRevelSingle(
+		"GET", twentyColon,
+		handler, http.HandlerFunc(handler.Get),
+	)
 	r, _ := http.NewRequest("GET", twentyRoute, nil)
-	benchRequest(b, handler, r)
+	benchRequest(b, router, r)
+}
+func BenchmarkTigerTonic_Param20(b *testing.B) {
+	router := loadTigerTonicSingle("GET", twentyBrace, httpHandlerFunc)
+
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkTraffic_Param20(b *testing.B) {
+	router := loadTrafficSingle("GET", twentyColon, trafficHandler)
+
+	r, _ := http.NewRequest("GET", twentyRoute, nil)
+	benchRequest(b, router, r)
 }
 
 // Route with Param and write
+func BenchmarkBeego_ParamWrite(b *testing.B) {
+	router := loadBeegoSingle("GET", "/user/:name!", beegoHandlerWrite)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkDenco_ParamWrite(b *testing.B) {
+	handler := new(dencoHandler)
+	router := loadDencoSingle(
+		"GET", "/user/:name",
+		handler, http.HandlerFunc(handler.dencoHandlerWrite),
+	)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
 func BenchmarkGocraftWeb_ParamWrite(b *testing.B) {
-	router := web.New(gocraftWebContext{})
-	router.Get("/user/:name", gocraftWebHandlerWrite)
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkGorillaMux_ParamWrite(b *testing.B) {
-	router := mux.NewRouter()
-	router.HandleFunc("/user/{name}", gorillaHandlerWrite).Methods("GET")
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkHttpRouter_ParamWrite(b *testing.B) {
-	router := httprouter.New()
-	router.GET("/user/:name", httpRouterHandleWrite)
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkHttpTreeMux_ParamWrite(b *testing.B) {
-	router := httptreemux.New()
-	router.GET("/user/:name", httpTreeMuxHandlerWrite)
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	r.RequestURI = "/user/gordon"
-	benchRequest(b, router, r)
-}
-func BenchmarkMartini_ParamWrite(b *testing.B) {
-	router := martini.NewRouter()
-	router.Get("/user/:name", martiniHandlerWrite)
-	martini := martini.New()
-	martini.Action(router.Handle)
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, martini, r)
-}
-func BenchmarkPat_ParamWrite(b *testing.B) {
-	router := pat.New()
-	router.Get("/user/:name", http.HandlerFunc(patHandlerWrite))
-
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkTigerTonic_ParamWrite(b *testing.B) {
-	router := tigertonic.NewTrieServeMux()
-	router.Handle("GET", "/user/{name}", http.HandlerFunc(tigerTonicHandlerWrite))
-	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, router, r)
-}
-func BenchmarkTraffic_ParamWrite(b *testing.B) {
-	traffic.SetVar("env", "bench")
-	router := traffic.New()
-	router.Get("/user/:name", trafficHandlerWrite)
+	router := loadGocraftWebSingle("GET", "/user/:name", gocraftWebHandlerWrite)
 
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
 	benchRequest(b, router, r)
 }
 func BenchmarkGoji_ParamWrite(b *testing.B) {
-	router := goji.New()
-	router.Get("/user/:name", gojiFuncWrite)
+	router := loadGojiSingle("GET", "/user/:name", gojiFuncWrite)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkGoJsonRest_ParamWrite(b *testing.B) {
+	handler := loadGoJsonRestSingle("GET", "/user/:name", goJsonRestHandlerWrite)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, handler, r)
+}
+func BenchmarkGorillaMux_ParamWrite(b *testing.B) {
+	router := loadGorillaMuxSingle("GET", "/user/{name}", gorillaHandlerWrite)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkHttpRouter_ParamWrite(b *testing.B) {
+	router := loadHttpRouterSingle("GET", "/user/:name", httpRouterHandleWrite)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkHttpTreeMux_ParamWrite(b *testing.B) {
+	router := loadHttpTreeMuxSingle("GET", "/user/:name", httpTreeMuxHandlerWrite)
 
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
 	benchRequest(b, router, r)
 }
 func BenchmarkKocha_ParamWrite(b *testing.B) {
-	handler := &kochaHandler{routerMap: map[string]urlrouter.URLRouter{
-		"GET": urlrouter.NewURLRouter("doublearray"),
-	}}
-	if err := handler.routerMap["GET"].Build([]urlrouter.Record{
-		urlrouter.NewRecord("/user/:name", http.HandlerFunc(handler.kochaHandlerWrite)),
-	}); err != nil {
-		panic(err)
-	}
+	handler := new(kochaHandler)
+	router := loadKochaSingle(
+		"GET", "/user/:name",
+		handler, http.HandlerFunc(handler.kochaHandlerWrite),
+	)
+
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, handler, r)
+	benchRequest(b, router, r)
 }
-func BenchmarkDenco_ParamWrite(b *testing.B) {
-	handler := &dencoHandler{routerMap: map[string]*denco.Router{
-		"GET": denco.New(),
-	}}
-	if err := handler.routerMap["GET"].Build([]denco.Record{
-		denco.NewRecord("/user/:name", http.HandlerFunc(handler.dencoHandlerWrite)),
-	}); err != nil {
-		panic(err)
-	}
+func BenchmarkMartini_ParamWrite(b *testing.B) {
+	router := loadMartiniSingle("GET", "/user/:name", martiniHandlerWrite)
+
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, handler, r)
+	benchRequest(b, router, r)
+}
+func BenchmarkPat_ParamWrite(b *testing.B) {
+	router := loadPatSingle("GET", "/user/:name", http.HandlerFunc(patHandlerWrite))
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
 }
 func BenchmarkRevel_ParamWrite(b *testing.B) {
-	router := revel.NewRouter("")
-	route := revel.NewRoute("GET", "/user/:name", "revel.GET", "", "", 0)
-	if err := router.Tree.Add(route.TreePath, route); err != nil {
-		panic(err)
-	}
-	handler := newRevelHandler(router)
-	handler.methods["revel.GET"] = handler.revelHandlerWrite
+	handler := new(revelHandler)
+	router := loadRevelSingle(
+		"GET", "/user/:name",
+		handler, http.HandlerFunc(handler.revelHandlerWrite),
+	)
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
-	benchRequest(b, handler, r)
+	benchRequest(b, router, r)
+}
+func BenchmarkTigerTonic_ParamWrite(b *testing.B) {
+	router := loadTigerTonicSingle(
+		"GET", "/user/{name}",
+		http.HandlerFunc(tigerTonicHandlerWrite),
+	)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
+}
+func BenchmarkTraffic_ParamWrite(b *testing.B) {
+	router := loadTrafficSingle("GET", "/user/:name", trafficHandlerWrite)
+
+	r, _ := http.NewRequest("GET", "/user/gordon", nil)
+	benchRequest(b, router, r)
 }

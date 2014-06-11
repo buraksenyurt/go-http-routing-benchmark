@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file.
 
-package benchmark
+package main
 
 import (
 	"net/http"
@@ -172,49 +172,97 @@ var staticRoutes = []route{
 var (
 	staticHttpServeMux http.Handler
 
+	staticBeego       http.Handler
+	staticDenco       http.Handler
 	staticGocraftWeb  http.Handler
+	staticGoji        http.Handler
+	staticGoJsonRest  http.Handler
 	staticGorillaMux  http.Handler
 	staticHttpRouter  http.Handler
 	staticHttpTreeMux http.Handler
+	staticKocha       http.Handler
 	staticMartini     http.Handler
 	staticPat         http.Handler
+	staticRevel       http.Handler
 	staticTigerTonic  http.Handler
 	staticTraffic     http.Handler
-	staticGoji        http.Handler
-	staticKocha       http.Handler
-	staticDenco       http.Handler
-	staticRevel       http.Handler
 )
 
 func init() {
 	println("#Static Routes:", len(staticRoutes))
 
-	serveMux := http.NewServeMux()
-	for _, route := range staticRoutes {
-		serveMux.HandleFunc(route.path, httpHandlerFunc)
-	}
-	staticHttpServeMux = serveMux
+	calcMem("HttpServeMux", func() {
+		serveMux := http.NewServeMux()
+		for _, route := range staticRoutes {
+			serveMux.HandleFunc(route.path, httpHandlerFunc)
+		}
+		staticHttpServeMux = serveMux
+	})
 
-	staticGocraftWeb = loadGocraftWeb(staticRoutes)
-	staticGorillaMux = loadGorillaMux(staticRoutes)
-	staticHttpRouter = loadHttpRouter(staticRoutes)
-	staticHttpTreeMux = loadHttpTreeMux(staticRoutes)
-	staticMartini = loadMartini(staticRoutes)
-	staticPat = loadPat(staticRoutes)
-	staticTigerTonic = loadTigerTonic(staticRoutes)
-	staticTraffic = loadTraffic(staticRoutes)
-	staticGoji = loadGoji(staticRoutes)
-	staticKocha = loadKocha(staticRoutes)
-	staticDenco = loadDenco(staticRoutes)
-	staticRevel = loadRevel(staticRoutes)
+	calcMem("Beego", func() {
+		staticBeego = loadBeego(staticRoutes)
+	})
+	calcMem("Denco", func() {
+		staticDenco = loadDenco(staticRoutes)
+	})
+	calcMem("GocraftWeb", func() {
+		staticGocraftWeb = loadGocraftWeb(staticRoutes)
+	})
+	calcMem("Goji", func() {
+		staticGoji = loadGoji(staticRoutes)
+	})
+	calcMem("GoJsonRest", func() {
+		staticGoJsonRest = loadGoJsonRest(staticRoutes)
+	})
+	calcMem("GorillaMux", func() {
+		staticGorillaMux = loadGorillaMux(staticRoutes)
+	})
+	calcMem("HttpRouter", func() {
+		staticHttpRouter = loadHttpRouter(staticRoutes)
+	})
+	calcMem("HttpTreeMux", func() {
+		staticHttpTreeMux = loadHttpTreeMux(staticRoutes)
+	})
+	calcMem("Kocha", func() {
+		staticKocha = loadKocha(staticRoutes)
+	})
+	calcMem("Martini", func() {
+		staticMartini = loadMartini(staticRoutes)
+	})
+	calcMem("Pat", func() {
+		staticPat = loadPat(staticRoutes)
+	})
+	calcMem("Revel", func() {
+		staticRevel = loadRevel(staticRoutes)
+	})
+	calcMem("TigerTonic", func() {
+		staticTigerTonic = loadTigerTonic(staticRoutes)
+	})
+	calcMem("Traffic", func() {
+		staticTraffic = loadTraffic(staticRoutes)
+	})
+
+	println()
 }
 
 // All routes
 func BenchmarkHttpServeMux_StaticAll(b *testing.B) {
 	benchRoutes(b, staticHttpServeMux, staticRoutes)
 }
+func BenchmarkBeego_StaticAll(b *testing.B) {
+	benchRoutes(b, staticBeego, staticRoutes)
+}
+func BenchmarkDenco_StaticAll(b *testing.B) {
+	benchRoutes(b, staticDenco, staticRoutes)
+}
 func BenchmarkGocraftWeb_StaticAll(b *testing.B) {
 	benchRoutes(b, staticGocraftWeb, staticRoutes)
+}
+func BenchmarkGoji_StaticAll(b *testing.B) {
+	benchRoutes(b, staticGoji, staticRoutes)
+}
+func BenchmarkGoJsonRest_StaticAll(b *testing.B) {
+	benchRoutes(b, staticGoJsonRest, staticRoutes)
 }
 func BenchmarkGorillaMux_StaticAll(b *testing.B) {
 	benchRoutes(b, staticGorillaMux, staticRoutes)
@@ -225,27 +273,21 @@ func BenchmarkHttpRouter_StaticAll(b *testing.B) {
 func BenchmarkHttpTreeMux_StaticAll(b *testing.B) {
 	benchRoutes(b, staticHttpRouter, staticRoutes)
 }
+func BenchmarkKocha_StaticAll(b *testing.B) {
+	benchRoutes(b, staticKocha, staticRoutes)
+}
 func BenchmarkMartini_StaticAll(b *testing.B) {
 	benchRoutes(b, staticMartini, staticRoutes)
 }
 func BenchmarkPat_StaticAll(b *testing.B) {
 	benchRoutes(b, staticPat, staticRoutes)
 }
+func BenchmarkRevel_StaticAll(b *testing.B) {
+	benchRoutes(b, staticRevel, staticRoutes)
+}
 func BenchmarkTigerTonic_StaticAll(b *testing.B) {
 	benchRoutes(b, staticTigerTonic, staticRoutes)
 }
 func BenchmarkTraffic_StaticAll(b *testing.B) {
 	benchRoutes(b, staticTraffic, staticRoutes)
-}
-func BenchmarkGoji_StaticAll(b *testing.B) {
-	benchRoutes(b, staticGoji, staticRoutes)
-}
-func BenchmarkKocha_StaticAll(b *testing.B) {
-	benchRoutes(b, staticKocha, staticRoutes)
-}
-func BenchmarkDenco_StaticAll(b *testing.B) {
-	benchRoutes(b, staticDenco, staticRoutes)
-}
-func BenchmarkRevel_StaticAll(b *testing.B) {
-	benchRoutes(b, staticRevel, staticRoutes)
 }
