@@ -59,21 +59,21 @@ The best 3 values for each test are bold. I'm pretty sure you can detect a patte
 
 | Router       | Static    | GitHub     | Google+   | Parse     |
 |:-------------|----------:|-----------:|----------:|----------:|
-| HttpServeMux |__18064 B__|         -  |        -  |        -  |
-| Beego        |  79472 B  |  497248 B  |  26480 B  |  38768 B  |
-| Denco        |  44752 B  |  107632 B  |  54896 B  |  36368 B  |
-| Gocraft Web  |  57976 B  |   95736 B  |   8024 B  |  13120 B  |
-| Goji         |  32400 B  | __58424 B__| __3392 B__| __6704 B__|
-| Go-Json-Rest | 152608 B  |  148352 B  |  11696 B  |  13712 B  |
-| Gorilla Mux  | 685152 B  | 1557216 B  |  80240 B  | 125480 B  |
-| HttpRouter   |__26232 B__| __44344 B__| __3144 B__| __5792 B__|
-| HttpTreeMux  |  75624 B  |   81408 B  |   7712 B  |   7616 B  |
-| Kocha        | 130336 B  |  811744 B  | 139968 B  | 191632 B  |
-| Martini      | 312592 B  |  579472 B  |  27520 B  |  50608 B  |
-| Pat          |__21272 B__| __18968 B__| __1448 B__| __2360 B__|
-| Revel        |  65320 B  |  104528 B  |   9264 B  |  14688 B  |
-| TigerTonic   |  85264 B  |   99392 B  |  10576 B  |  11008 B  |
-| Traffic      | 649568 B  | 1124704 B  |  57984 B  |  98168 B  |
+| HttpServeMux |__18256 B__|         -  |        -  |        -  |
+| Beego        |  79992 B  |  502168 B  |  25128 B  |  39400 B  |
+| Denco        |__15872 B__| __50016 B__|  10432 B  |   6080 B  |
+| Gocraft Web  |  55736 B  |   95080 B  |   7768 B  |  12352 B  |
+| Goji         |  35008 B  |   60856 B  | __3456 B__| __5952 B__|
+| Go-Json-Rest | 146440 B  |  142112 B  |  12248 B  |  14960 B  |
+| Gorilla Mux  | 332136 B  |  742280 B  |  34464 B  |  60176 B  |
+| HttpRouter   |  29880 B  | __43736 B__| __3128 B__| __5768 B__|
+| HttpTreeMux  |  74440 B  |   76672 B  |   7160 B  |   7664 B  |
+| Kocha        | 117808 B  |  795344 B  | 129808 B  | 185104 B  |
+| Martini      | 317008 B  |  530032 B  |  24848 B  |  48584 B  |
+| Pat          |__17624 B__| __16488 B__| __1448 B__| __2072 B__|
+| Revel        |  66088 B  |  104320 B  |   9264 B  |  14688 B  |
+| TigerTonic   |  84296 B  |  103840 B  |  10040 B  |  10520 B  |
+| Traffic      | 300440 B  |  500920 B  |  24480 B  |  43336 B  |
 
 The first place goes to [Pat](https://github.com/bmizerany/pat), followed by [HttpRouter](https://github.com/julienschmidt/httprouter) and [Goji](https://github.com/zenazn/goji/). Now, before everyone starts reading the documentation of Pat, `[SPOILER]` this low memory consumption comes at the price of relatively bad routing performance. The routing structure of Pat is simple - probably too simple. `[/SPOILER]`.
 
@@ -93,22 +93,22 @@ The logs below show, that http.ServeMux has only medium performance, compared to
 [HttpRouter](https://github.com/julienschmidt/httprouter) was the first router (I know of) that managed to serve all the static URLs without a single heap allocation. Since [the first run of this benchmark](https://github.com/julienschmidt/go-http-routing-benchmark/blob/0eb78904be13aee7a1e9f8943386f7c26b9d9d79/README.md) more routers followed this trend and were optimized in the same way.
 
 ```
-BenchmarkHttpServeMux_StaticAll     1000           1509664 ns/op             104 B/op          8 allocs/op
+BenchmarkHttpServeMux_StaticAll     2000           1201290 ns/op             104 B/op          8 allocs/op
 
-BenchmarkBeego_StaticAll            1000           2373893 ns/op          521254 B/op      15181 allocs/op
-BenchmarkDenco_StaticAll          100000             19112 ns/op               0 B/op          0 allocs/op
-BenchmarkGocraftWeb_StaticAll      10000            246574 ns/op           49249 B/op        951 allocs/op
-BenchmarkGoji_StaticAll            10000            128310 ns/op               0 B/op          0 allocs/op
-BenchmarkGoJsonRest_StaticAll       2000           1513146 ns/op          183219 B/op       4130 allocs/op
-BenchmarkGorillaMux_StaticAll        500           6787297 ns/op           72408 B/op        966 allocs/op
-BenchmarkHttpRouter_StaticAll      50000             31463 ns/op               0 B/op          0 allocs/op
-BenchmarkHttpTreeMux_StaticAll     50000             31474 ns/op               0 B/op          0 allocs/op
-BenchmarkKocha_StaticAll           50000             33299 ns/op               0 B/op          0 allocs/op
-BenchmarkMartini_StaticAll           500           5169444 ns/op          145810 B/op       2522 allocs/op
-BenchmarkPat_StaticAll              1000           2519000 ns/op          554338 B/op      11250 allocs/op
-BenchmarkRevel_StaticAll           10000            171800 ns/op           30753 B/op        633 allocs/op
-BenchmarkTigerTonic_StaticAll      20000             93011 ns/op            7782 B/op        158 allocs/op
-BenchmarkTraffic_StaticAll           100          16320267 ns/op         3798960 B/op      27960 allocs/op
+BenchmarkBeego_StaticAll            1000           2063983 ns/op          521120 B/op      15180 allocs/op
+BenchmarkDenco_StaticAll          100000             15445 ns/op               0 B/op          0 allocs/op
+BenchmarkGocraftWeb_StaticAll      10000            212954 ns/op           49238 B/op        951 allocs/op
+BenchmarkGoji_StaticAll            10000            102123 ns/op               0 B/op          0 allocs/op
+BenchmarkGoJsonRest_StaticAll       2000           1286144 ns/op          183132 B/op       4129 allocs/op
+BenchmarkGorillaMux_StaticAll        500           5628269 ns/op           72403 B/op        966 allocs/op
+BenchmarkHttpRouter_StaticAll     100000             25028 ns/op               0 B/op          0 allocs/op
+BenchmarkHttpTreeMux_StaticAll    100000             25080 ns/op               0 B/op          0 allocs/op
+BenchmarkKocha_StaticAll          100000             26600 ns/op               0 B/op          0 allocs/op
+BenchmarkMartini_StaticAll           500           4176818 ns/op          145788 B/op       2521 allocs/op
+BenchmarkPat_StaticAll              1000           2177115 ns/op          554319 B/op      11250 allocs/op
+BenchmarkRevel_StaticAll           10000            147621 ns/op           30751 B/op        633 allocs/op
+BenchmarkTigerTonic_StaticAll      20000             76099 ns/op            7781 B/op        158 allocs/op
+BenchmarkTraffic_StaticAll           100          14340193 ns/op         3798582 B/op      27957 allocs/op
 ```
 
 ### Micro Benchmarks
@@ -117,71 +117,71 @@ The following benchmarks measure the cost of some very basic operations.
 
 In the first benchmark, only a single route, containing a parameter, is loaded into the routers. Then a request for a URL matching this pattern is made and the router has to call the respective registered handler function. End.
 ```
-BenchmarkBeego_Param              200000              9306 ns/op            1213 B/op         21 allocs/op
-BenchmarkDenco_Param             5000000               448 ns/op              50 B/op          2 allocs/op
-BenchmarkGocraftWeb_Param        1000000              2350 ns/op             674 B/op          9 allocs/op
-BenchmarkGoji_Param              1000000              1231 ns/op             343 B/op          2 allocs/op
-BenchmarkGoJsonRest_Param         200000             10754 ns/op            1804 B/op         30 allocs/op
-BenchmarkGorillaMux_Param         500000              7824 ns/op             786 B/op          7 allocs/op
-BenchmarkHttpRouter_Param       10000000               221 ns/op              33 B/op          1 allocs/op
-BenchmarkHttpTreeMux_Param       2000000               905 ns/op             343 B/op          2 allocs/op
-BenchmarkKocha_Param             5000000               541 ns/op              58 B/op          3 allocs/op
-BenchmarkMartini_Param            200000              9264 ns/op            1188 B/op         13 allocs/op
-BenchmarkPat_Param               1000000              2711 ns/op             687 B/op         14 allocs/op
-BenchmarkRevel_Param             1000000              2056 ns/op             639 B/op          8 allocs/op
-BenchmarkTigerTonic_Param         500000              4484 ns/op            1027 B/op         19 allocs/op
-BenchmarkTraffic_Param            200000              8754 ns/op            2030 B/op         23 allocs/op
+BenchmarkBeego_Param              200000              7526 ns/op            1213 B/op         21 allocs/op
+BenchmarkDenco_Param            10000000               264 ns/op              33 B/op          1 allocs/op
+BenchmarkGocraftWeb_Param        1000000              2057 ns/op             674 B/op          9 allocs/op
+BenchmarkGoji_Param              1000000              1069 ns/op             343 B/op          2 allocs/op
+BenchmarkGoJsonRest_Param         200000              9139 ns/op            1804 B/op         30 allocs/op
+BenchmarkGorillaMux_Param         500000              5846 ns/op             786 B/op          7 allocs/op
+BenchmarkHttpRouter_Param       10000000               187 ns/op              33 B/op          1 allocs/op
+BenchmarkHttpTreeMux_Param       2000000               802 ns/op             343 B/op          2 allocs/op
+BenchmarkKocha_Param             5000000               452 ns/op              58 B/op          3 allocs/op
+BenchmarkMartini_Param            500000              7719 ns/op            1188 B/op         13 allocs/op
+BenchmarkPat_Param               1000000              2344 ns/op             687 B/op         14 allocs/op
+BenchmarkRevel_Param             1000000              1822 ns/op             639 B/op          8 allocs/op
+BenchmarkTigerTonic_Param         500000              3852 ns/op            1027 B/op         19 allocs/op
+BenchmarkTraffic_Param            500000              7531 ns/op            2030 B/op         23 allocs/op
 ```
 
 Same as before, but now with multiple parameters, all in the same single route. The intention is to see how the routers scale with the number of parameters. The values of the parameters must be passed to the handler function somehow, which requires allocations. Let's see how clever the routers solve this task with a route containing 5 and 20 parameters:
 ```
-BenchmarkBeego_Param5                  50000             31199 ns/op            1343 B/op         21 allocs/op
-BenchmarkDenco_Param5                1000000              1676 ns/op             409 B/op          5 allocs/op
-BenchmarkGocraftWeb_Param5            500000              3676 ns/op             948 B/op         12 allocs/op
-BenchmarkGoji_Param5                 1000000              1842 ns/op             343 B/op          2 allocs/op
-BenchmarkGoJsonRest_Param5            100000             16482 ns/op            3291 B/op         41 allocs/op
-BenchmarkGorillaMux_Param5            200000             13985 ns/op             916 B/op          7 allocs/op
-BenchmarkHttpRouter_Param5           5000000               571 ns/op             163 B/op          1 allocs/op
-BenchmarkHttpTreeMux_Param5          1000000              1432 ns/op             343 B/op          2 allocs/op
-BenchmarkKocha_Param5                1000000              2178 ns/op             449 B/op         10 allocs/op
-BenchmarkMartini_Param5               100000             19271 ns/op            1317 B/op         13 allocs/op
-BenchmarkPat_Param5                   500000              5760 ns/op            1494 B/op         25 allocs/op
-BenchmarkRevel_Param5                 500000              3757 ns/op             981 B/op         15 allocs/op
-BenchmarkTigerTonic_Param5            200000             14786 ns/op            2640 B/op         53 allocs/op
-BenchmarkTraffic_Param5               200000             14909 ns/op            2358 B/op         31 allocs/op
+BenchmarkBeego_Param5             100000             25516 ns/op            1343 B/op         21 allocs/op
+BenchmarkDenco_Param5            1000000              1460 ns/op             490 B/op          4 allocs/op
+BenchmarkGocraftWeb_Param5       1000000              3191 ns/op             948 B/op         12 allocs/op
+BenchmarkGoji_Param5             1000000              1548 ns/op             343 B/op          2 allocs/op
+BenchmarkGoJsonRest_Param5        200000             14113 ns/op            3291 B/op         41 allocs/op
+BenchmarkGorillaMux_Param5        200000             11210 ns/op             916 B/op          7 allocs/op
+BenchmarkHttpRouter_Param5       5000000               494 ns/op             163 B/op          1 allocs/op
+BenchmarkHttpTreeMux_Param5      1000000              1235 ns/op             343 B/op          2 allocs/op
+BenchmarkKocha_Param5            1000000              1857 ns/op             449 B/op         10 allocs/op
+BenchmarkMartini_Param5           100000             16115 ns/op            1317 B/op         13 allocs/op
+BenchmarkPat_Param5               500000              4981 ns/op            1494 B/op         25 allocs/op
+BenchmarkRevel_Param5            1000000              3251 ns/op             981 B/op         15 allocs/op
+BenchmarkTigerTonic_Param5        200000             12353 ns/op            2640 B/op         53 allocs/op
+BenchmarkTraffic_Param5           200000             12632 ns/op            2357 B/op         31 allocs/op
 
-BenchmarkBeego_Param20                 10000            173208 ns/op            3739 B/op         24 allocs/op
-BenchmarkDenco_Param20                500000              4884 ns/op            1679 B/op          7 allocs/op
-BenchmarkGocraftWeb_Param20           200000             11571 ns/op            3864 B/op         17 allocs/op
-BenchmarkGoji_Param20                 500000              5333 ns/op            1260 B/op          2 allocs/op
-BenchmarkGoJsonRest_Param20            50000             42345 ns/op           10672 B/op         77 allocs/op
-BenchmarkGorillaMux_Param20           100000             24837 ns/op            3313 B/op         10 allocs/op
-BenchmarkHttpRouter_Param20          1000000              1716 ns/op             653 B/op          1 allocs/op
-BenchmarkHttpTreeMux_Param20          200000              8266 ns/op            2219 B/op          4 allocs/op
-BenchmarkKocha_Param20                500000              7057 ns/op            1839 B/op         27 allocs/op
-BenchmarkMartini_Param20               20000             86362 ns/op            3715 B/op         16 allocs/op
-BenchmarkPat_Param20                  500000              5775 ns/op            1494 B/op         25 allocs/op
-BenchmarkRevel_Param20                200000             13848 ns/op            4565 B/op         35 allocs/op
-BenchmarkTigerTonic_Param20            50000             56685 ns/op           11268 B/op        179 allocs/op
-BenchmarkTraffic_Param20               50000             40647 ns/op            8250 B/op         68 allocs/op
+BenchmarkBeego_Param20             10000            137161 ns/op            3741 B/op         24 allocs/op
+BenchmarkDenco_Param20            500000              4694 ns/op            2054 B/op          6 allocs/op
+BenchmarkGocraftWeb_Param20       200000             10268 ns/op            3865 B/op         17 allocs/op
+BenchmarkGoji_Param20             500000              4577 ns/op            1261 B/op          2 allocs/op
+BenchmarkGoJsonRest_Param20        50000             36797 ns/op           10673 B/op         77 allocs/op
+BenchmarkGorillaMux_Param20       100000             20776 ns/op            3313 B/op         10 allocs/op
+BenchmarkHttpRouter_Param20      1000000              1522 ns/op             653 B/op          1 allocs/op
+BenchmarkHttpTreeMux_Param20      500000              7017 ns/op            2220 B/op          4 allocs/op
+BenchmarkKocha_Param20            500000              5995 ns/op            1839 B/op         27 allocs/op
+BenchmarkMartini_Param20           50000             68846 ns/op            3714 B/op         16 allocs/op
+BenchmarkPat_Param20              500000              4994 ns/op            1494 B/op         25 allocs/op
+BenchmarkRevel_Param20            200000             12094 ns/op            4564 B/op         35 allocs/op
+BenchmarkTigerTonic_Param20        50000             47878 ns/op           11270 B/op        179 allocs/op
+BenchmarkTraffic_Param20           50000             34868 ns/op            8251 B/op         68 allocs/op
 ```
 
 Now let's see how expensive it is to access a parameter. The handler function reads the value (by the name of the parameter, e.g. with a map lookup; depends on the router) and writes it to our [web scale storage](https://www.youtube.com/watch?v=b2F-DItXtZs) (`/dev/null`).
 ```
-BenchmarkBeego_ParamWrite         200000             10809 ns/op            1654 B/op         26 allocs/op
-BenchmarkDenco_ParamWrite        5000000               547 ns/op              50 B/op          2 allocs/op
-BenchmarkGocraftWeb_ParamWrite   1000000              2545 ns/op             683 B/op         10 allocs/op
-BenchmarkGoji_ParamWrite         1000000              1315 ns/op             343 B/op          2 allocs/op
-BenchmarkGoJsonRest_ParamWrite    200000             12879 ns/op            2286 B/op         35 allocs/op
-BenchmarkGorillaMux_ParamWrite    500000              7451 ns/op             786 B/op          7 allocs/op
-BenchmarkHttpRouter_ParamWrite  10000000               298 ns/op              33 B/op          1 allocs/op
-BenchmarkHttpTreeMux_ParamWrite  1000000              1007 ns/op             343 B/op          2 allocs/op
-BenchmarkKocha_ParamWrite        5000000               640 ns/op              58 B/op          3 allocs/op
-BenchmarkMartini_ParamWrite       200000             10829 ns/op            1287 B/op         16 allocs/op
-BenchmarkPat_ParamWrite           500000              4586 ns/op            1129 B/op         19 allocs/op
-BenchmarkRevel_ParamWrite        1000000              2178 ns/op             639 B/op          8 allocs/op
-BenchmarkTigerTonic_ParamWrite    500000              7212 ns/op            1485 B/op         25 allocs/op
-BenchmarkTraffic_ParamWrite       200000             10614 ns/op            2464 B/op         27 allocs/op
+BenchmarkBeego_ParamWrite         200000              9030 ns/op            1654 B/op         26 allocs/op
+BenchmarkDenco_ParamWrite        5000000               341 ns/op              33 B/op          1 allocs/op
+BenchmarkGocraftWeb_ParamWrite   1000000              2201 ns/op             683 B/op         10 allocs/op
+BenchmarkGoji_ParamWrite         1000000              1129 ns/op             343 B/op          2 allocs/op
+BenchmarkGoJsonRest_ParamWrite    200000             10914 ns/op            2286 B/op         35 allocs/op
+BenchmarkGorillaMux_ParamWrite    500000              6152 ns/op             786 B/op          7 allocs/op
+BenchmarkHttpRouter_ParamWrite  10000000               247 ns/op              33 B/op          1 allocs/op
+BenchmarkHttpTreeMux_ParamWrite  2000000               891 ns/op             343 B/op          2 allocs/op
+BenchmarkKocha_ParamWrite        5000000               533 ns/op              58 B/op          3 allocs/op
+BenchmarkMartini_ParamWrite       200000              8971 ns/op            1287 B/op         16 allocs/op
+BenchmarkPat_ParamWrite           500000              4002 ns/op            1129 B/op         19 allocs/op
+BenchmarkRevel_ParamWrite        1000000              1880 ns/op             639 B/op          8 allocs/op
+BenchmarkTigerTonic_ParamWrite    500000              6135 ns/op            1485 B/op         25 allocs/op
+BenchmarkTraffic_ParamWrite       200000              9122 ns/op            2464 B/op         27 allocs/op
 ```
 
 ### [Parse.com](https://parse.com/docs/rest#summary)
@@ -193,65 +193,65 @@ The tasks are 1.) routing a static URL (no parameters), 2.) routing a URL contai
 Worth noting is, that the requested route might be a good case for some routing algorithms, while it is a bad case for another algorithm. The values might vary slightly depending on the selected route.
 
 ```
-BenchmarkBeego_ParseStatic                500000              5902 ns/op            1295 B/op         22 allocs/op
-BenchmarkDenco_ParseStatic              50000000              60.5 ns/op               0 B/op          0 allocs/op
-BenchmarkGocraftWeb_ParseStatic          1000000              1449 ns/op             314 B/op          6 allocs/op
-BenchmarkGoji_ParseStatic                5000000               537 ns/op               0 B/op          0 allocs/op
-BenchmarkGoJsonRest_ParseStatic           200000              8858 ns/op            1147 B/op         26 allocs/op
-BenchmarkGorillaMux_ParseStatic           200000             10315 ns/op             460 B/op          6 allocs/op
-BenchmarkHttpRouter_ParseStatic         50000000              61.0 ns/op               0 B/op          0 allocs/op
-BenchmarkHttpTreeMux_ParseStatic        20000000               101 ns/op               0 B/op          0 allocs/op
-BenchmarkKocha_ParseStatic              20000000              97.2 ns/op               0 B/op          0 allocs/op
-BenchmarkMartini_ParseStatic              500000              8215 ns/op             862 B/op         12 allocs/op
-BenchmarkPat_ParseStatic                 1000000              1255 ns/op             249 B/op          5 allocs/op
-BenchmarkRevel_ParseStatic               2000000               937 ns/op             180 B/op          4 allocs/op
-BenchmarkTigerTonic_ParseStatic          5000000               421 ns/op              49 B/op          1 allocs/op
-BenchmarkTraffic_ParseStatic              200000             11173 ns/op            2396 B/op         25 allocs/op
+BenchmarkBeego_ParseStatic                500000              4994 ns/op            1295 B/op         22 allocs/op
+BenchmarkDenco_ParseStatic              50000000              49.2 ns/op               0 B/op          0 allocs/op
+BenchmarkGocraftWeb_ParseStatic          1000000              1254 ns/op             314 B/op          6 allocs/op
+BenchmarkGoji_ParseStatic                5000000               425 ns/op               0 B/op          0 allocs/op
+BenchmarkGoJsonRest_ParseStatic           500000              7520 ns/op            1147 B/op         26 allocs/op
+BenchmarkGorillaMux_ParseStatic           200000              8193 ns/op             460 B/op          6 allocs/op
+BenchmarkHttpRouter_ParseStatic         50000000              47.6 ns/op               0 B/op          0 allocs/op
+BenchmarkHttpTreeMux_ParseStatic        20000000              82.4 ns/op               0 B/op          0 allocs/op
+BenchmarkKocha_ParseStatic              20000000              77.9 ns/op               0 B/op          0 allocs/op
+BenchmarkMartini_ParseStatic              500000              6934 ns/op             862 B/op         12 allocs/op
+BenchmarkPat_ParseStatic                 1000000              1072 ns/op             249 B/op          5 allocs/op
+BenchmarkRevel_ParseStatic               2000000               804 ns/op             180 B/op          4 allocs/op
+BenchmarkTigerTonic_ParseStatic          5000000               352 ns/op              49 B/op          1 allocs/op
+BenchmarkTraffic_ParseStatic              200000              9600 ns/op            2396 B/op         25 allocs/op
 
-BenchmarkBeego_ParseParam                 200000             13410 ns/op            1827 B/op         35 allocs/op
-BenchmarkDenco_ParseParam                5000000               493 ns/op              50 B/op          2 allocs/op
-BenchmarkGocraftWeb_ParseParam           1000000              2515 ns/op             690 B/op          9 allocs/op
-BenchmarkGoji_ParseParam                 1000000              1589 ns/op             343 B/op          2 allocs/op
-BenchmarkGoJsonRest_ParseParam            200000             11119 ns/op            1809 B/op         30 allocs/op
-BenchmarkGorillaMux_ParseParam            200000             11774 ns/op             786 B/op          7 allocs/op
-BenchmarkHttpRouter_ParseParam          10000000               288 ns/op              65 B/op          1 allocs/op
-BenchmarkHttpTreeMux_ParseParam          2000000               981 ns/op             343 B/op          2 allocs/op
-BenchmarkKocha_ParseParam                5000000               582 ns/op              58 B/op          3 allocs/op
-BenchmarkMartini_ParseParam               200000             11952 ns/op            1188 B/op         13 allocs/op
-BenchmarkPat_ParseParam                   500000              4430 ns/op            1197 B/op         20 allocs/op
-BenchmarkRevel_ParseParam                1000000              2221 ns/op             655 B/op          8 allocs/op
-BenchmarkTigerTonic_ParseParam            500000              4841 ns/op            1084 B/op         19 allocs/op
-BenchmarkTraffic_ParseParam               200000             11207 ns/op            2330 B/op         25 allocs/op
+BenchmarkBeego_ParseParam                 200000             11286 ns/op            1827 B/op         35 allocs/op
+BenchmarkDenco_ParseParam               10000000               303 ns/op              33 B/op          1 allocs/op
+BenchmarkGocraftWeb_ParseParam           1000000              2210 ns/op             689 B/op          9 allocs/op
+BenchmarkGoji_ParseParam                 1000000              1364 ns/op             343 B/op          2 allocs/op
+BenchmarkGoJsonRest_ParseParam            200000              9470 ns/op            1809 B/op         30 allocs/op
+BenchmarkGorillaMux_ParseParam            200000              9505 ns/op             786 B/op          7 allocs/op
+BenchmarkHttpRouter_ParseParam          10000000               250 ns/op              65 B/op          1 allocs/op
+BenchmarkHttpTreeMux_ParseParam          2000000               891 ns/op             343 B/op          2 allocs/op
+BenchmarkKocha_ParseParam                5000000               508 ns/op              58 B/op          3 allocs/op
+BenchmarkMartini_ParseParam               200000              9881 ns/op            1188 B/op         13 allocs/op
+BenchmarkPat_ParseParam                   500000              3900 ns/op            1197 B/op         20 allocs/op
+BenchmarkRevel_ParseParam                1000000              1992 ns/op             655 B/op          8 allocs/op
+BenchmarkTigerTonic_ParseParam            500000              4203 ns/op            1084 B/op         19 allocs/op
+BenchmarkTraffic_ParseParam               200000              9704 ns/op            2329 B/op         25 allocs/op
 
-BenchmarkBeego_Parse2Params               100000             15447 ns/op            1989 B/op         35 allocs/op
-BenchmarkDenco_Parse2Params              2000000               822 ns/op             116 B/op          3 allocs/op
-BenchmarkGocraftWeb_Parse2Params         1000000              2858 ns/op             736 B/op         10 allocs/op
-BenchmarkGoji_Parse2Params               1000000              1576 ns/op             343 B/op          2 allocs/op
-BenchmarkGoJsonRest_Parse2Params          200000             12735 ns/op            2167 B/op         33 allocs/op
-BenchmarkGorillaMux_Parse2Params          200000             12513 ns/op             819 B/op          7 allocs/op
-BenchmarkHttpRouter_Parse2Params         5000000               333 ns/op              65 B/op          1 allocs/op
-BenchmarkHttpTreeMux_Parse2Params        1000000              1144 ns/op             343 B/op          2 allocs/op
-BenchmarkKocha_Parse2Params              1000000              1019 ns/op             132 B/op          5 allocs/op
-BenchmarkMartini_Parse2Params             200000             12469 ns/op            1220 B/op         13 allocs/op
-BenchmarkPat_Parse2Params                 500000              4520 ns/op             908 B/op         21 allocs/op
-BenchmarkRevel_Parse2Params              1000000              2666 ns/op             722 B/op         10 allocs/op
-BenchmarkTigerTonic_Parse2Params          500000              7759 ns/op            1488 B/op         28 allocs/op
-BenchmarkTraffic_Parse2Params             200000             11562 ns/op            2135 B/op         25 allocs/op
+BenchmarkBeego_Parse2Params               200000             13104 ns/op            1988 B/op         35 allocs/op
+BenchmarkDenco_Parse2Params              5000000               586 ns/op              99 B/op          2 allocs/op
+BenchmarkGocraftWeb_Parse2Params         1000000              2508 ns/op             736 B/op         10 allocs/op
+BenchmarkGoji_Parse2Params               1000000              1338 ns/op             343 B/op          2 allocs/op
+BenchmarkGoJsonRest_Parse2Params          200000             10920 ns/op            2167 B/op         33 allocs/op
+BenchmarkGorillaMux_Parse2Params          200000             10274 ns/op             819 B/op          7 allocs/op
+BenchmarkHttpRouter_Parse2Params        10000000               288 ns/op              65 B/op          1 allocs/op
+BenchmarkHttpTreeMux_Parse2Params        1000000              1008 ns/op             343 B/op          2 allocs/op
+BenchmarkKocha_Parse2Params              2000000               863 ns/op             132 B/op          5 allocs/op
+BenchmarkMartini_Parse2Params             200000             10188 ns/op            1220 B/op         13 allocs/op
+BenchmarkPat_Parse2Params                 500000              3868 ns/op             908 B/op         21 allocs/op
+BenchmarkRevel_Parse2Params              1000000              2375 ns/op             722 B/op         10 allocs/op
+BenchmarkTigerTonic_Parse2Params          500000              6629 ns/op            1488 B/op         28 allocs/op
+BenchmarkTraffic_Parse2Params             200000              9847 ns/op            2135 B/op         25 allocs/op
 
-BenchmarkBeego_ParseAll                    10000            324418 ns/op           40499 B/op        777 allocs/op
-BenchmarkDenco_ParseAll                   200000             11777 ns/op            1008 B/op         35 allocs/op
-BenchmarkGocraftWeb_ParseAll               50000             59215 ns/op           14319 B/op        210 allocs/op
-BenchmarkGoji_ParseAll                     50000             32191 ns/op            5491 B/op         33 allocs/op
-BenchmarkGoJsonRest_ParseAll               10000            279400 ns/op           41644 B/op        759 allocs/op
-BenchmarkGorillaMux_ParseAll                5000            457558 ns/op           17274 B/op        175 allocs/op
-BenchmarkHttpRouter_ParseAll              500000              6466 ns/op             665 B/op         16 allocs/op
-BenchmarkHttpTreeMux_ParseAll             100000             19673 ns/op            5491 B/op         33 allocs/op
-BenchmarkKocha_ParseAll                   200000             14527 ns/op            1160 B/op         54 allocs/op
-BenchmarkMartini_ParseAll                  10000            308871 ns/op           27715 B/op        333 allocs/op
-BenchmarkPat_ParseAll                      20000             85603 ns/op           18296 B/op        385 allocs/op
-BenchmarkRevel_ParseAll                    50000             51380 ns/op           12646 B/op        176 allocs/op
-BenchmarkTigerTonic_ParseAll               10000            108252 ns/op           20872 B/op        420 allocs/op
-BenchmarkTraffic_ParseAll                  10000            359819 ns/op           70704 B/op        763 allocs/op
+BenchmarkBeego_ParseAll                    10000            271131 ns/op           40497 B/op        777 allocs/op
+BenchmarkDenco_ParseAll                   500000              7808 ns/op             733 B/op         19 allocs/op
+BenchmarkGocraftWeb_ParseAll               50000             51273 ns/op           14319 B/op        210 allocs/op
+BenchmarkGoji_ParseAll                    100000             27420 ns/op            5491 B/op         33 allocs/op
+BenchmarkGoJsonRest_ParseAll               10000            237745 ns/op           41644 B/op        759 allocs/op
+BenchmarkGorillaMux_ParseAll                5000            367092 ns/op           17274 B/op        175 allocs/op
+BenchmarkHttpRouter_ParseAll              500000              5382 ns/op             665 B/op         16 allocs/op
+BenchmarkHttpTreeMux_ParseAll             100000             17190 ns/op            5491 B/op         33 allocs/op
+BenchmarkKocha_ParseAll                   200000             12000 ns/op            1160 B/op         54 allocs/op
+BenchmarkMartini_ParseAll                  10000            255956 ns/op           27712 B/op        333 allocs/op
+BenchmarkPat_ParseAll                      50000             73982 ns/op           18294 B/op        385 allocs/op
+BenchmarkRevel_ParseAll                    50000             45078 ns/op           12646 B/op        176 allocs/op
+BenchmarkTigerTonic_ParseAll               20000             92848 ns/op           20871 B/op        420 allocs/op
+BenchmarkTraffic_ParseAll                  10000            307768 ns/op           70689 B/op        763 allocs/op
 ```
 
 
@@ -260,50 +260,50 @@ BenchmarkTraffic_ParseAll                  10000            359819 ns/op        
 The GitHub API is rather large, consisting of 203 routes. The tasks are basically the same as in the benchmarks before.
 
 ```
-BenchmarkBeego_GithubStatic               500000              6292 ns/op            1197 B/op         38 allocs/op
-BenchmarkDenco_GithubStatic             20000000              84.7 ns/op               0 B/op          0 allocs/op
-BenchmarkGocraftWeb_GithubStatic         1000000              1457 ns/op             314 B/op          6 allocs/op
-BenchmarkGoji_GithubStatic               5000000               604 ns/op               0 B/op          0 allocs/op
-BenchmarkGoJsonRest_GithubStatic          200000              9061 ns/op            1163 B/op         26 allocs/op
-BenchmarkGorillaMux_GithubStatic           50000             58162 ns/op             460 B/op          6 allocs/op
-BenchmarkHttpRouter_GithubStatic        20000000               125 ns/op               0 B/op          0 allocs/op
-BenchmarkHttpTreeMux_GithubStatic       20000000               105 ns/op               0 B/op          0 allocs/op
-BenchmarkKocha_GithubStatic             20000000               132 ns/op               0 B/op          0 allocs/op
-BenchmarkMartini_GithubStatic             100000             26241 ns/op             862 B/op         12 allocs/op
-BenchmarkPat_GithubStatic                 100000             16814 ns/op            3789 B/op         76 allocs/op
-BenchmarkRevel_GithubStatic              2000000               962 ns/op             180 B/op          4 allocs/op
-BenchmarkTigerTonic_GithubStatic         5000000               494 ns/op              49 B/op          1 allocs/op
-BenchmarkTraffic_GithubStatic              20000             95631 ns/op           23369 B/op        172 allocs/op
+BenchmarkBeego_GithubStatic               500000              5376 ns/op            1197 B/op         38 allocs/op
+BenchmarkDenco_GithubStatic             50000000              72.4 ns/op               0 B/op          0 allocs/op
+BenchmarkGocraftWeb_GithubStatic         1000000              1234 ns/op             314 B/op          6 allocs/op
+BenchmarkGoji_GithubStatic               5000000               471 ns/op               0 B/op          0 allocs/op
+BenchmarkGoJsonRest_GithubStatic          500000              7619 ns/op            1163 B/op         26 allocs/op
+BenchmarkGorillaMux_GithubStatic           50000             46661 ns/op             460 B/op          6 allocs/op
+BenchmarkHttpRouter_GithubStatic        20000000              98.8 ns/op               0 B/op          0 allocs/op
+BenchmarkHttpTreeMux_GithubStatic       20000000              83.0 ns/op               0 B/op          0 allocs/op
+BenchmarkKocha_GithubStatic             20000000               101 ns/op               0 B/op          0 allocs/op
+BenchmarkMartini_GithubStatic             100000             21218 ns/op             862 B/op         12 allocs/op
+BenchmarkPat_GithubStatic                 200000             14353 ns/op            3789 B/op         76 allocs/op
+BenchmarkRevel_GithubStatic              2000000               821 ns/op             180 B/op          4 allocs/op
+BenchmarkTigerTonic_GithubStatic         5000000               417 ns/op              49 B/op          1 allocs/op
+BenchmarkTraffic_GithubStatic              20000             81277 ns/op           23368 B/op        172 allocs/op
 
-BenchmarkBeego_GithubParam                 20000             77679 ns/op            3038 B/op         57 allocs/op
-BenchmarkDenco_GithubParam               2000000               967 ns/op             116 B/op          3 allocs/op
-BenchmarkGocraftWeb_GithubParam          1000000              2989 ns/op             737 B/op         10 allocs/op
-BenchmarkGoji_GithubParam                1000000              2277 ns/op             343 B/op          2 allocs/op
-BenchmarkGoJsonRest_GithubParam           200000             13102 ns/op            2194 B/op         33 allocs/op
-BenchmarkGorillaMux_GithubParam            50000             40468 ns/op             819 B/op          7 allocs/op
-BenchmarkHttpRouter_GithubParam          5000000               568 ns/op              98 B/op          1 allocs/op
-BenchmarkHttpTreeMux_GithubParam         1000000              1318 ns/op             343 B/op          2 allocs/op
-BenchmarkKocha_GithubParam               1000000              1156 ns/op             132 B/op          5 allocs/op
-BenchmarkMartini_GithubParam               50000             34692 ns/op            1221 B/op         13 allocs/op
-BenchmarkPat_GithubParam                  200000             12177 ns/op            2628 B/op         56 allocs/op
-BenchmarkRevel_GithubParam               1000000              2826 ns/op             739 B/op         10 allocs/op
-BenchmarkTigerTonic_GithubParam           500000              7700 ns/op            1484 B/op         28 allocs/op
-BenchmarkTraffic_GithubParam               50000             44948 ns/op            7153 B/op         60 allocs/op
+BenchmarkBeego_GithubParam                 50000             61400 ns/op            3038 B/op         57 allocs/op
+BenchmarkDenco_GithubParam               5000000               668 ns/op              99 B/op          2 allocs/op
+BenchmarkGocraftWeb_GithubParam          1000000              2572 ns/op             737 B/op         10 allocs/op
+BenchmarkGoji_GithubParam                1000000              1897 ns/op             343 B/op          2 allocs/op
+BenchmarkGoJsonRest_GithubParam           200000             11114 ns/op            2193 B/op         33 allocs/op
+BenchmarkGorillaMux_GithubParam            50000             33390 ns/op             819 B/op          7 allocs/op
+BenchmarkHttpRouter_GithubParam          5000000               477 ns/op              98 B/op          1 allocs/op
+BenchmarkHttpTreeMux_GithubParam         1000000              1132 ns/op             343 B/op          2 allocs/op
+BenchmarkKocha_GithubParam               2000000               948 ns/op             132 B/op          5 allocs/op
+BenchmarkMartini_GithubParam              100000             28201 ns/op            1221 B/op         13 allocs/op
+BenchmarkPat_GithubParam                  200000             10322 ns/op            2628 B/op         56 allocs/op
+BenchmarkRevel_GithubParam               1000000              2457 ns/op             739 B/op         10 allocs/op
+BenchmarkTigerTonic_GithubParam           500000              6557 ns/op            1484 B/op         28 allocs/op
+BenchmarkTraffic_GithubParam               50000             38129 ns/op            7153 B/op         60 allocs/op
 
-BenchmarkBeego_GithubAll                      50          40861674 ns/op          519988 B/op      11210 allocs/op
-BenchmarkDenco_GithubAll                   10000            174017 ns/op           21363 B/op        508 allocs/op
-BenchmarkGocraftWeb_GithubAll               5000            585437 ns/op          136615 B/op       1915 allocs/op
-BenchmarkGoji_GithubAll                     2000           1038040 ns/op           57349 B/op        347 allocs/op
-BenchmarkGoJsonRest_GithubAll               1000           2555637 ns/op          408055 B/op       6558 allocs/op
-BenchmarkGorillaMux_GithubAll                100          25697013 ns/op          153510 B/op       1420 allocs/op
-BenchmarkHttpRouter_GithubAll              20000             96329 ns/op           14102 B/op        169 allocs/op
-BenchmarkHttpTreeMux_GithubAll             10000            225263 ns/op           57350 B/op        347 allocs/op
-BenchmarkKocha_GithubAll                   10000            222596 ns/op           24072 B/op        847 allocs/op
-BenchmarkMartini_GithubAll                   100          15716582 ns/op          245764 B/op       2943 allocs/op
-BenchmarkPat_GithubAll                       500           6950182 ns/op         1589281 B/op      32576 allocs/op
-BenchmarkRevel_GithubAll                    5000            556683 ns/op          131270 B/op       1847 allocs/op
-BenchmarkTigerTonic_GithubAll               2000           1487732 ns/op          251075 B/op       6087 allocs/op
-BenchmarkTraffic_GithubAll                   100          21345637 ns/op         3176442 B/op      24961 allocs/op
+BenchmarkBeego_GithubAll                      50          33276310 ns/op          519865 B/op      11210 allocs/op
+BenchmarkDenco_GithubAll                   10000            126465 ns/op           20057 B/op        341 allocs/op
+BenchmarkGocraftWeb_GithubAll               5000            503853 ns/op          136608 B/op       1915 allocs/op
+BenchmarkGoji_GithubAll                     2000            861253 ns/op           57348 B/op        347 allocs/op
+BenchmarkGoJsonRest_GithubAll               1000           2173548 ns/op          407929 B/op       6558 allocs/op
+BenchmarkGorillaMux_GithubAll                100          20876261 ns/op          153518 B/op       1420 allocs/op
+BenchmarkHttpRouter_GithubAll              20000             80131 ns/op           14101 B/op        169 allocs/op
+BenchmarkHttpTreeMux_GithubAll             10000            192816 ns/op           57351 B/op        347 allocs/op
+BenchmarkKocha_GithubAll                   10000            183658 ns/op           24070 B/op        847 allocs/op
+BenchmarkMartini_GithubAll                   100          12670407 ns/op          245781 B/op       2943 allocs/op
+BenchmarkPat_GithubAll                       500           5940985 ns/op         1589223 B/op      32575 allocs/op
+BenchmarkRevel_GithubAll                    5000            472542 ns/op          131276 B/op       1847 allocs/op
+BenchmarkTigerTonic_GithubAll               2000           1250034 ns/op          251056 B/op       6087 allocs/op
+BenchmarkTraffic_GithubAll                   100          17813831 ns/op         3176162 B/op      24958 allocs/op
 ```
 
 ### [Google+](https://developers.google.com/+/api/latest/)
@@ -311,65 +311,65 @@ BenchmarkTraffic_GithubAll                   100          21345637 ns/op        
 Last but not least the Google+ API, consisting of 13 routes. In reality this is just a subset of a much larger API.
 
 ```
-BenchmarkBeego_GPlusStatic               1000000              4016 ns/op             853 B/op         18 allocs/op
-BenchmarkDenco_GPlusStatic              50000000              54.6 ns/op               0 B/op          0 allocs/op
-BenchmarkGocraftWeb_GPlusStatic          1000000              1354 ns/op             297 B/op          6 allocs/op
-BenchmarkGoji_GPlusStatic                5000000               427 ns/op               0 B/op          0 allocs/op
-BenchmarkGoJsonRest_GPlusStatic           200000              8791 ns/op            1147 B/op         26 allocs/op
-BenchmarkGorillaMux_GPlusStatic           500000              4902 ns/op             460 B/op          6 allocs/op
-BenchmarkHttpRouter_GPlusStatic         50000000              59.1 ns/op               0 B/op          0 allocs/op
-BenchmarkHttpTreeMux_GPlusStatic        50000000              56.3 ns/op               0 B/op          0 allocs/op
-BenchmarkKocha_GPlusStatic              20000000              89.0 ns/op               0 B/op          0 allocs/op
-BenchmarkMartini_GPlusStatic              500000              7149 ns/op             862 B/op         12 allocs/op
-BenchmarkPat_GPlusStatic                 5000000               514 ns/op              99 B/op          2 allocs/op
-BenchmarkRevel_GPlusStatic               2000000               845 ns/op             164 B/op          4 allocs/op
-BenchmarkTigerTonic_GPlusStatic         10000000               286 ns/op              33 B/op          1 allocs/op
-BenchmarkTraffic_GPlusStatic              500000              7105 ns/op            1513 B/op         19 allocs/op
+BenchmarkBeego_GPlusStatic               1000000              3398 ns/op             853 B/op         18 allocs/op
+BenchmarkDenco_GPlusStatic              50000000              45.6 ns/op               0 B/op          0 allocs/op
+BenchmarkGocraftWeb_GPlusStatic          1000000              1166 ns/op             297 B/op          6 allocs/op
+BenchmarkGoji_GPlusStatic                5000000               324 ns/op               0 B/op          0 allocs/op
+BenchmarkGoJsonRest_GPlusStatic           500000              7346 ns/op            1147 B/op         26 allocs/op
+BenchmarkGorillaMux_GPlusStatic           500000              4024 ns/op             460 B/op          6 allocs/op
+BenchmarkHttpRouter_GPlusStatic         50000000              47.6 ns/op               0 B/op          0 allocs/op
+BenchmarkHttpTreeMux_GPlusStatic        50000000              45.2 ns/op               0 B/op          0 allocs/op
+BenchmarkKocha_GPlusStatic              50000000              71.3 ns/op               0 B/op          0 allocs/op
+BenchmarkMartini_GPlusStatic              500000              5983 ns/op             862 B/op         12 allocs/op
+BenchmarkPat_GPlusStatic                 5000000               437 ns/op              99 B/op          2 allocs/op
+BenchmarkRevel_GPlusStatic               5000000               727 ns/op             164 B/op          4 allocs/op
+BenchmarkTigerTonic_GPlusStatic         10000000               237 ns/op              33 B/op          1 allocs/op
+BenchmarkTraffic_GPlusStatic              500000              6028 ns/op            1513 B/op         19 allocs/op
 
-BenchmarkBeego_GPlusParam                 200000             12606 ns/op            1279 B/op         23 allocs/op
-BenchmarkDenco_GPlusParam                5000000               530 ns/op              50 B/op          2 allocs/op
-BenchmarkGocraftWeb_GPlusParam           1000000              2472 ns/op             674 B/op          9 allocs/op
-BenchmarkGoji_GPlusParam                 1000000              1407 ns/op             343 B/op          2 allocs/op
-BenchmarkGoJsonRest_GPlusParam            200000             12421 ns/op            1822 B/op         30 allocs/op
-BenchmarkGorillaMux_GPlusParam            200000             12751 ns/op             786 B/op          7 allocs/op
-BenchmarkHttpRouter_GPlusParam           5000000               349 ns/op              65 B/op          1 allocs/op
-BenchmarkHttpTreeMux_GPlusParam          1000000              1008 ns/op             343 B/op          2 allocs/op
-BenchmarkKocha_GPlusParam                5000000               639 ns/op              58 B/op          3 allocs/op
-BenchmarkMartini_GPlusParam               200000             13275 ns/op            1188 B/op         13 allocs/op
-BenchmarkPat_GPlusParam                  1000000              3094 ns/op             753 B/op         14 allocs/op
-BenchmarkRevel_GPlusParam                1000000              2212 ns/op             656 B/op          8 allocs/op
-BenchmarkTigerTonic_GPlusParam            500000              5044 ns/op            1103 B/op         19 allocs/op
-BenchmarkTraffic_GPlusParam               200000             11654 ns/op            2044 B/op         23 allocs/op
+BenchmarkBeego_GPlusParam                 200000             10409 ns/op            1279 B/op         23 allocs/op
+BenchmarkDenco_GPlusParam                5000000               312 ns/op              33 B/op          1 allocs/op
+BenchmarkGocraftWeb_GPlusParam           1000000              2162 ns/op             674 B/op          9 allocs/op
+BenchmarkGoji_GPlusParam                 1000000              1210 ns/op             343 B/op          2 allocs/op
+BenchmarkGoJsonRest_GPlusParam            200000              9681 ns/op            1822 B/op         30 allocs/op
+BenchmarkGorillaMux_GPlusParam            200000             10115 ns/op             786 B/op          7 allocs/op
+BenchmarkHttpRouter_GPlusParam          10000000               294 ns/op              65 B/op          1 allocs/op
+BenchmarkHttpTreeMux_GPlusParam          2000000               908 ns/op             343 B/op          2 allocs/op
+BenchmarkKocha_GPlusParam                5000000               533 ns/op              58 B/op          3 allocs/op
+BenchmarkMartini_GPlusParam               200000             11088 ns/op            1188 B/op         13 allocs/op
+BenchmarkPat_GPlusParam                  1000000              2665 ns/op             753 B/op         14 allocs/op
+BenchmarkRevel_GPlusParam                1000000              1946 ns/op             656 B/op          8 allocs/op
+BenchmarkTigerTonic_GPlusParam            500000              4278 ns/op            1103 B/op         19 allocs/op
+BenchmarkTraffic_GPlusParam               200000             10078 ns/op            2044 B/op         23 allocs/op
 
-BenchmarkBeego_GPlus2Params               100000             16441 ns/op            1340 B/op         23 allocs/op
-BenchmarkDenco_GPlus2Params              2000000               953 ns/op             116 B/op          3 allocs/op
-BenchmarkGocraftWeb_GPlus2Params         1000000              3045 ns/op             737 B/op         10 allocs/op
-BenchmarkGoji_GPlus2Params               1000000              2095 ns/op             343 B/op          2 allocs/op
-BenchmarkGoJsonRest_GPlus2Params          200000             13315 ns/op            2197 B/op         33 allocs/op
-BenchmarkGorillaMux_GPlus2Params           50000             34663 ns/op             819 B/op          7 allocs/op
-BenchmarkHttpRouter_GPlus2Params         5000000               421 ns/op              65 B/op          1 allocs/op
-BenchmarkHttpTreeMux_GPlus2Params        1000000              1246 ns/op             343 B/op          2 allocs/op
-BenchmarkKocha_GPlus2Params              1000000              1163 ns/op             132 B/op          5 allocs/op
-BenchmarkMartini_GPlus2Params              50000             43900 ns/op            1320 B/op         17 allocs/op
-BenchmarkPat_GPlus2Params                 200000             10062 ns/op            2403 B/op         41 allocs/op
-BenchmarkRevel_GPlus2Params              1000000              2911 ns/op             753 B/op         10 allocs/op
-BenchmarkTigerTonic_GPlus2Params          500000              8245 ns/op            1586 B/op         28 allocs/op
-BenchmarkTraffic_GPlus2Params              50000             37030 ns/op            3629 B/op         35 allocs/op
+BenchmarkBeego_GPlus2Params               200000             13594 ns/op            1340 B/op         23 allocs/op
+BenchmarkDenco_GPlus2Params              5000000               672 ns/op              99 B/op          2 allocs/op
+BenchmarkGocraftWeb_GPlus2Params         1000000              2631 ns/op             737 B/op         10 allocs/op
+BenchmarkGoji_GPlus2Params               1000000              1774 ns/op             343 B/op          2 allocs/op
+BenchmarkGoJsonRest_GPlus2Params          200000             11283 ns/op            2197 B/op         33 allocs/op
+BenchmarkGorillaMux_GPlus2Params          100000             28169 ns/op             819 B/op          7 allocs/op
+BenchmarkHttpRouter_GPlus2Params         5000000               354 ns/op              65 B/op          1 allocs/op
+BenchmarkHttpTreeMux_GPlus2Params        1000000              1086 ns/op             343 B/op          2 allocs/op
+BenchmarkKocha_GPlus2Params              2000000               967 ns/op             132 B/op          5 allocs/op
+BenchmarkMartini_GPlus2Params              50000             35769 ns/op            1320 B/op         17 allocs/op
+BenchmarkPat_GPlus2Params                 200000              8645 ns/op            2403 B/op         41 allocs/op
+BenchmarkRevel_GPlus2Params              1000000              2534 ns/op             752 B/op         10 allocs/op
+BenchmarkTigerTonic_GPlus2Params          500000              6957 ns/op            1586 B/op         28 allocs/op
+BenchmarkTraffic_GPlus2Params              50000             31056 ns/op            3629 B/op         35 allocs/op
 
-BenchmarkBeego_GPlusAll                    10000            186509 ns/op           16506 B/op        299 allocs/op
-BenchmarkDenco_GPlusAll                   200000              8759 ns/op             887 B/op         27 allocs/op
-BenchmarkGocraftWeb_GPlusAll               50000             33987 ns/op            8354 B/op        117 allocs/op
-BenchmarkGoji_GPlusAll                    100000             20068 ns/op            3775 B/op         22 allocs/op
-BenchmarkGoJsonRest_GPlusAll               10000            153430 ns/op           24122 B/op        402 allocs/op
-BenchmarkGorillaMux_GPlusAll               10000            219266 ns/op            9732 B/op         91 allocs/op
-BenchmarkHttpRouter_GPlusAll              500000              4644 ns/op             660 B/op         11 allocs/op
-BenchmarkHttpTreeMux_GPlusAll             200000             12616 ns/op            3775 B/op         22 allocs/op
-BenchmarkKocha_GPlusAll                   200000             10847 ns/op            1015 B/op         43 allocs/op
-BenchmarkMartini_GPlusAll                  10000            243172 ns/op           15553 B/op        194 allocs/op
-BenchmarkPat_GPlusAll                      20000             78577 ns/op           17710 B/op        346 allocs/op
-BenchmarkRevel_GPlusAll                    50000             31080 ns/op            7929 B/op        107 allocs/op
-BenchmarkTigerTonic_GPlusAll               20000             83006 ns/op           15492 B/op        322 allocs/op
-BenchmarkTraffic_GPlusAll                  10000            255141 ns/op           42171 B/op        447 allocs/op
+BenchmarkBeego_GPlusAll                    10000            153642 ns/op           16505 B/op        299 allocs/op
+BenchmarkDenco_GPlusAll                   500000              5923 ns/op             698 B/op         16 allocs/op
+BenchmarkGocraftWeb_GPlusAll              100000             29503 ns/op            8354 B/op        117 allocs/op
+BenchmarkGoji_GPlusAll                    100000             17107 ns/op            3775 B/op         22 allocs/op
+BenchmarkGoJsonRest_GPlusAll               10000            130358 ns/op           24121 B/op        402 allocs/op
+BenchmarkGorillaMux_GPlusAll               10000            177879 ns/op            9732 B/op         91 allocs/op
+BenchmarkHttpRouter_GPlusAll             1000000              3864 ns/op             660 B/op         11 allocs/op
+BenchmarkHttpTreeMux_GPlusAll             200000             11074 ns/op            3775 B/op         22 allocs/op
+BenchmarkKocha_GPlusAll                   200000              8916 ns/op            1015 B/op         43 allocs/op
+BenchmarkMartini_GPlusAll                  10000            200905 ns/op           15552 B/op        194 allocs/op
+BenchmarkPat_GPlusAll                      50000             67146 ns/op           17709 B/op        346 allocs/op
+BenchmarkRevel_GPlusAll                   100000             27046 ns/op            7930 B/op        107 allocs/op
+BenchmarkTigerTonic_GPlusAll               50000             69351 ns/op           15492 B/op        322 allocs/op
+BenchmarkTraffic_GPlusAll                  10000            213909 ns/op           42170 B/op        447 allocs/op
 ```
 
 
