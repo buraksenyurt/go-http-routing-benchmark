@@ -72,11 +72,7 @@ func BenchmarkBeego_Param(b *testing.B) {
 	benchRequest(b, router, r)
 }
 func BenchmarkDenco_Param(b *testing.B) {
-	handler := new(dencoHandler)
-	router := loadDencoSingle(
-		"GET", "/user/:name",
-		handler, http.HandlerFunc(handler.Get),
-	)
+	router := loadDencoSingle("GET", "/user/:name", dencoHandle)
 
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
 	benchRequest(b, router, r)
@@ -174,11 +170,7 @@ func BenchmarkBeego_Param5(b *testing.B) {
 	benchRequest(b, router, r)
 }
 func BenchmarkDenco_Param5(b *testing.B) {
-	handler := new(dencoHandler)
-	router := loadDencoSingle(
-		"GET", fiveColon,
-		handler, http.HandlerFunc(handler.Get),
-	)
+	router := loadDencoSingle("GET", fiveColon, dencoHandle)
 
 	r, _ := http.NewRequest("GET", fiveRoute, nil)
 	benchRequest(b, router, r)
@@ -276,11 +268,7 @@ func BenchmarkBeego_Param20(b *testing.B) {
 	benchRequest(b, router, r)
 }
 func BenchmarkDenco_Param20(b *testing.B) {
-	handler := new(dencoHandler)
-	router := loadDencoSingle(
-		"GET", twentyColon,
-		handler, http.HandlerFunc(handler.Get),
-	)
+	router := loadDencoSingle("GET", twentyColon, dencoHandle)
 
 	r, _ := http.NewRequest("GET", twentyRoute, nil)
 	benchRequest(b, router, r)
@@ -373,11 +361,7 @@ func BenchmarkBeego_ParamWrite(b *testing.B) {
 	benchRequest(b, router, r)
 }
 func BenchmarkDenco_ParamWrite(b *testing.B) {
-	handler := new(dencoHandler)
-	router := loadDencoSingle(
-		"GET", "/user/:name",
-		handler, http.HandlerFunc(handler.dencoHandlerWrite),
-	)
+	router := loadDencoSingle("GET", "/user/:name", dencoHandlerWrite)
 
 	r, _ := http.NewRequest("GET", "/user/gordon", nil)
 	benchRequest(b, router, r)
