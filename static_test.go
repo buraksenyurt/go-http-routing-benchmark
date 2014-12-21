@@ -192,6 +192,7 @@ var (
 	staticRivet       http.Handler
 	staticTigerTonic  http.Handler
 	staticTraffic     http.Handler
+	staticVulcan      http.Handler
 	staticZeus        http.Handler
 )
 
@@ -266,6 +267,9 @@ func init() {
 	calcMem("Traffic", func() {
 		staticTraffic = loadTraffic(staticRoutes)
 	})
+	calcMem("Vulcan", func() {
+		staticVulcan = loadTraffic(staticRoutes)
+	})
 	calcMem("Zeus", func() {
 		staticZeus = loadZeus(staticRoutes)
 	})
@@ -337,6 +341,9 @@ func BenchmarkTigerTonic_StaticAll(b *testing.B) {
 }
 func BenchmarkTraffic_StaticAll(b *testing.B) {
 	benchRoutes(b, staticTraffic, staticRoutes)
+}
+func BenchmarkVulcan_StaticAll(b *testing.B) {
+	benchRoutes(b, staticVulcan, staticRoutes)
 }
 func BenchmarkZeus_StaticAll(b *testing.B) {
 	benchRoutes(b, staticZeus, staticRoutes)
