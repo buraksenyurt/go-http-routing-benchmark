@@ -11,14 +11,19 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"revel"
 	"runtime"
 
+	"github.com/plimble/ace"
+
+	"github.com/Unknwon/macaron"
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/context"
 	"github.com/bmizerany/pat"
+	"github.com/daryl/zeus"
 	"github.com/dimfeld/httptreemux"
+	"github.com/emicklei/go-restful"
+	"github.com/gin-gonic/gin"
 	"github.com/go-martini/martini"
 	"github.com/gocraft/web"
 	"github.com/gorilla/mux"
@@ -28,6 +33,10 @@ import (
 	_ "github.com/naoina/kocha-urlrouter/doublearray"
 	"github.com/pilu/traffic"
 	"github.com/rcrowley/go-tigertonic"
+	"github.com/revel/revel"
+	"github.com/robfig/pathtree"
+	"github.com/squiidz/bone"
+	"github.com/typepress/rivet"
 	goji "github.com/zenazn/goji/web"
 )
 
@@ -63,13 +72,36 @@ func init() {
 	log.SetOutput(new(mockResponseWriter))
 	nullLogger = log.New(new(mockResponseWriter), "", 0)
 
-	beego.RunMode = "prod"
-	martini.Env = martini.Prod
-	traffic.SetVar("env", "bench")
+	initBeego()
+	initGin()
+	initMartini()
+	initRevel()
+	initTraffic()
 }
 
 // Common
 func httpHandlerFunc(w http.ResponseWriter, r *http.Request) {}
+
+// Ace
+func aceHandle(_ *ace.C) {}
+
+func aceHandleWrite(c *ace.C) {
+	io.WriteString(c.Writer, c.Params.ByName("name"))
+}
+
+func loadAce(routes []route) http.Handler {
+	router := ace.New()
+	for _, route := range routes {
+		router.Handle(route.method, route.path, []ace.HandlerFunc{aceHandle})
+	}
+	return router
+}
+
+func loadAceSingle(method, path string, handle ace.HandlerFunc) http.Handler {
+	router := ace.New()
+	router.Handle(method, path, []ace.HandlerFunc{handle})
+	return router
+}
 
 // beego
 func beegoHandler(ctx *context.Context) {}
@@ -78,12 +110,16 @@ func beegoHandlerWrite(ctx *context.Context) {
 	ctx.WriteString(ctx.Input.Param(":name"))
 }
 
+func initBeego() {
+	beego.RunMode = "prod"
+	beego.BeeLogger.Close()
+}
+
 func loadBeego(routes []route) http.Handler {
 	re := regexp.MustCompile(":([^/]*)")
-	app := beego.NewApp()
+	app := beego.NewControllerRegister()
 	for _, route := range routes {
-		route.path = re.ReplaceAllString(route.path, ":$1!")
-
+		route.path = re.ReplaceAllString(route.path, ":$1")
 		switch route.method {
 		case "GET":
 			app.Get(route.path, beegoHandler)
@@ -99,11 +135,11 @@ func loadBeego(routes []route) http.Handler {
 			panic("Unknow HTTP method: " + route.method)
 		}
 	}
-	return app.Handlers
+	return app
 }
 
 func loadBeegoSingle(method, path string, handler beego.FilterFunc) http.Handler {
-	app := beego.NewApp()
+	app := beego.NewControllerRegister()
 	switch method {
 	case "GET":
 		app.Get(path, handler)
@@ -118,7 +154,48 @@ func loadBeegoSingle(method, path string, handler beego.FilterFunc) http.Handler
 	default:
 		panic("Unknow HTTP method: " + method)
 	}
-	return app.Handlers
+	return app
+}
+
+// bone
+func loadBone(routes []route) http.Handler {
+	router := bone.New()
+	for _, route := range routes {
+		switch route.method {
+		case "GET":
+			router.Get(route.path, http.HandlerFunc(httpHandlerFunc))
+		case "POST":
+			router.Post(route.path, http.HandlerFunc(httpHandlerFunc))
+		case "PUT":
+			router.Put(route.path, http.HandlerFunc(httpHandlerFunc))
+		case "PATCH":
+			router.Patch(route.path, http.HandlerFunc(httpHandlerFunc))
+		case "DELETE":
+			router.Delete(route.path, http.HandlerFunc(httpHandlerFunc))
+		default:
+			panic("Unknow HTTP method: " + route.method)
+		}
+	}
+	return router
+}
+
+func loadBoneSingle(method, path string, handler http.Handler) http.Handler {
+	router := bone.New()
+	switch method {
+	case "GET":
+		router.Get(path, handler)
+	case "POST":
+		router.Post(path, handler)
+	case "PUT":
+		router.Put(path, handler)
+	case "PATCH":
+		router.Patch(path, handler)
+	case "DELETE":
+		router.Delete(path, handler)
+	default:
+		panic("Unknow HTTP method: " + method)
+	}
+	return router
 }
 
 // Denco
@@ -148,6 +225,31 @@ func loadDencoSingle(method, path string, handle denco.HandlerFunc) http.Handler
 		panic(err)
 	}
 	return handler
+}
+
+// Gin
+func ginHandle(_ *gin.Context) {}
+
+func ginHandleWrite(c *gin.Context) {
+	io.WriteString(c.Writer, c.Params.ByName("name"))
+}
+
+func initGin() {
+	gin.SetMode("release")
+}
+
+func loadGin(routes []route) http.Handler {
+	router := gin.New()
+	for _, route := range routes {
+		router.Handle(route.method, route.path, []gin.HandlerFunc{ginHandle})
+	}
+	return router
+}
+
+func loadGinSingle(method, path string, handle gin.HandlerFunc) http.Handler {
+	router := gin.New()
+	router.Handle(method, path, []gin.HandlerFunc{handle})
+	return router
 }
 
 // gocraft/web
@@ -279,6 +381,58 @@ func loadGoJsonRestSingle(method, path string, hfunc rest.HandlerFunc) http.Hand
 		&rest.Route{method, path, hfunc},
 	)
 	return handler
+}
+
+// go-restful
+func goRestfulHandlerWrite(r *restful.Request, w *restful.Response) {
+	io.WriteString(w, r.Request.URL.Query().Get("name"))
+}
+
+func goRestfulHandler(r *restful.Request, w *restful.Response) {}
+
+func loadGoRestful(routes []route) http.Handler {
+	wsContainer := restful.NewContainer()
+	ws := new(restful.WebService)
+
+	for _, route := range routes {
+		switch route.method {
+		case "GET":
+			ws.Route(ws.GET(route.path).To(goRestfulHandler))
+		case "POST":
+			ws.Route(ws.POST(route.path).To(goRestfulHandler))
+		case "PUT":
+			ws.Route(ws.PUT(route.path).To(goRestfulHandler))
+		case "PATCH":
+			ws.Route(ws.PATCH(route.path).To(goRestfulHandler))
+		case "DELETE":
+			ws.Route(ws.DELETE(route.path).To(goRestfulHandler))
+		default:
+			panic("Unknow HTTP method: " + route.method)
+		}
+	}
+	wsContainer.Add(ws)
+	return wsContainer
+}
+
+func loadGoRestfulSingle(method, path string, handler restful.RouteFunction) http.Handler {
+	wsContainer := restful.NewContainer()
+	ws := new(restful.WebService)
+	switch method {
+	case "GET":
+		ws.Route(ws.GET(path).To(handler))
+	case "POST":
+		ws.Route(ws.POST(path).To(handler))
+	case "PUT":
+		ws.Route(ws.PUT(path).To(handler))
+	case "PATCH":
+		ws.Route(ws.PATCH(path).To(handler))
+	case "DELETE":
+		ws.Route(ws.DELETE(path).To(handler))
+	default:
+		panic("Unknow HTTP method: " + method)
+	}
+	wsContainer.Add(ws)
+	return wsContainer
 }
 
 // gorilla/mux
@@ -424,11 +578,62 @@ func loadKochaSingle(method, path string, handler *kochaHandler, hfunc http.Hand
 	return handler
 }
 
+// Macaron
+func macaronHandler(_ *macaron.Context) {}
+
+func macaronHandlerWrite(c *macaron.Context) string {
+	return c.Params("name")
+}
+
+func loadMacaron(routes []route) http.Handler {
+	m := macaron.New()
+	for _, route := range routes {
+		switch route.method {
+		case "GET":
+			m.Get(route.path, martiniHandler)
+		case "POST":
+			m.Post(route.path, martiniHandler)
+		case "PUT":
+			m.Put(route.path, martiniHandler)
+		case "PATCH":
+			m.Patch(route.path, martiniHandler)
+		case "DELETE":
+			m.Delete(route.path, martiniHandler)
+		default:
+			panic("Unknow HTTP method: " + route.method)
+		}
+	}
+	return m
+}
+
+func loadMacaronSingle(method, path string, handler interface{}) http.Handler {
+	m := macaron.New()
+	switch method {
+	case "GET":
+		m.Get(path, handler)
+	case "POST":
+		m.Post(path, handler)
+	case "PUT":
+		m.Put(path, handler)
+	case "PATCH":
+		m.Patch(path, handler)
+	case "DELETE":
+		m.Delete(path, handler)
+	default:
+		panic("Unknow HTTP method: " + method)
+	}
+	return m
+}
+
 // Martini
 func martiniHandler() {}
 
 func martiniHandlerWrite(params martini.Params) string {
 	return params["name"]
+}
+
+func initMartini() {
+	martini.Env = martini.Prod
 }
 
 func loadMartini(routes []route) http.Handler {
@@ -517,76 +722,135 @@ func loadPatSingle(method, path string, handler http.Handler) http.Handler {
 	return m
 }
 
-// Revel
-type revelHandler struct {
-	router  *revel.Router
-	params  map[string][]string
-	methods map[string]http.HandlerFunc
+// Revel (Router only)
+// In the following code some Revel internals are modelled.
+// The original revel code is copyrighted by Rob Figueiredo.
+// See https://github.com/revel/revel/blob/master/LICENSE
+type RevelController struct {
+	*revel.Controller
+	router *revel.Router
 }
 
-func newRevelHandler(router *revel.Router) *revelHandler {
-	return &revelHandler{
-		router:  router,
-		methods: make(map[string]http.HandlerFunc),
-	}
+func (rc *RevelController) Handle() revel.Result {
+	return revelResult{}
 }
 
-func (h *revelHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	match := h.router.Route(r)
-	if match == nil {
-		panic("Route not found: " + r.URL.Path)
-	}
-	h.params = match.Params
-	h.methods[match.ControllerName+"."+match.MethodName].ServeHTTP(w, r)
+func (rc *RevelController) HandleWrite() revel.Result {
+	return rc.RenderText(rc.Params.Get("name"))
 }
 
-func (h *revelHandler) Get(w http.ResponseWriter, r *http.Request)    {}
-func (h *revelHandler) Post(w http.ResponseWriter, r *http.Request)   {}
-func (h *revelHandler) Put(w http.ResponseWriter, r *http.Request)    {}
-func (h *revelHandler) Patch(w http.ResponseWriter, r *http.Request)  {}
-func (h *revelHandler) Delete(w http.ResponseWriter, r *http.Request) {}
-func (h *revelHandler) revelHandlerWrite(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, h.params["name"][0])
-}
+type revelResult struct{}
 
-func loadRevel(routes []route) *revelHandler {
-	router := revel.NewRouter("")
-	handler := newRevelHandler(router)
-	for _, r := range routes {
-		var f http.HandlerFunc
-		switch r.method {
-		case "GET":
-			f = handler.Get
-		case "POST":
-			f = handler.Post
-		case "PUT":
-			f = handler.Put
-		case "PATCH":
-			f = handler.Patch
-		case "DELETE":
-			f = handler.Delete
+func (rr revelResult) Apply(req *revel.Request, resp *revel.Response) {}
+
+func (rc *RevelController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Dirty hacks, do NOT copy!
+	revel.MainRouter = rc.router
+
+	upgrade := r.Header.Get("Upgrade")
+	if upgrade == "websocket" || upgrade == "Websocket" {
+		panic("Not implemented")
+	} else {
+		var (
+			req  = revel.NewRequest(r)
+			resp = revel.NewResponse(w)
+			c    = revel.NewController(req, resp)
+		)
+		req.Websocket = nil
+		revel.Filters[0](c, revel.Filters[1:])
+		if c.Result != nil {
+			c.Result.Apply(req, resp)
+		} else if c.Response.Status != 0 {
+			panic("Not implemented")
 		}
-		action := "revel." + r.method
-		handler.methods[action] = f
-		route := revel.NewRoute(r.method, r.path, action, "", "", 0)
-		if err := router.Tree.Add(route.TreePath, route); err != nil {
+		// Close the Writer if we can
+		if w, ok := resp.Out.(io.Closer); ok {
+			w.Close()
+		}
+	}
+}
+
+func initRevel() {
+	// Only use the Revel filters required for this benchmark
+	revel.Filters = []revel.Filter{
+		revel.RouterFilter,
+		revel.ParamsFilter,
+		revel.ActionInvoker,
+	}
+
+	revel.RegisterController((*RevelController)(nil),
+		[]*revel.MethodType{
+			&revel.MethodType{
+				Name: "Handle",
+			},
+			&revel.MethodType{
+				Name: "HandleWrite",
+			},
+		})
+}
+
+func loadRevel(routes []route) http.Handler {
+	router := revel.NewRouter("")
+
+	// parseRoutes
+	var rs []*revel.Route
+	for _, r := range routes {
+		rs = append(rs, revel.NewRoute(r.method, r.path, "RevelController.Handle", "", "", 0))
+	}
+	router.Routes = rs
+
+	// updateTree
+	router.Tree = pathtree.New()
+	for _, r := range router.Routes {
+		err := router.Tree.Add(r.TreePath, r)
+		// Allow GETs to respond to HEAD requests.
+		if err == nil && r.Method == "GET" {
+			err = router.Tree.Add("/HEAD"+r.Path, r)
+		}
+		// Error adding a route to the pathtree.
+		if err != nil {
 			panic(err)
 		}
 	}
-	return handler
+
+	rc := new(RevelController)
+	rc.router = router
+	return rc
 }
 
-func loadRevelSingle(method, path string, handler *revelHandler, hfunc http.HandlerFunc) http.Handler {
-	handler.router = revel.NewRouter("")
-	action := "revel." + method
-	handler.methods = map[string]http.HandlerFunc{
-		action: hfunc,
-	}
+func loadRevelSingle(method, path, action string) http.Handler {
+	router := revel.NewRouter("")
+
 	route := revel.NewRoute(method, path, action, "", "", 0)
-	if err := handler.router.Tree.Add(route.TreePath, route); err != nil {
+	if err := router.Tree.Add(route.TreePath, route); err != nil {
 		panic(err)
 	}
-	return handler
+
+	rc := new(RevelController)
+	rc.router = router
+	return rc
+}
+
+// Rivet
+func rivetHandler() {}
+func rivetHandlerWrite(c rivet.Context) {
+	c.WriteString(c.GetParams().Get("name"))
+}
+
+func loadRivet(routes []route) http.Handler {
+	router := rivet.NewRouter(nil)
+	for _, route := range routes {
+		router.Handle(route.method, route.path, rivetHandler)
+	}
+	return router
+}
+
+func loadRivetSingle(method, path string, handler interface{}) http.Handler {
+	router := rivet.NewRouter(nil)
+
+	router.Handle(method, path, handler)
+
+	return router
 }
 
 // Tiger Tonic
@@ -614,6 +878,10 @@ func trafficHandlerWrite(w traffic.ResponseWriter, r *traffic.Request) {
 	io.WriteString(w, r.URL.Query().Get("name"))
 }
 func trafficHandler(w traffic.ResponseWriter, r *traffic.Request) {}
+
+func initTraffic() {
+	traffic.SetVar("env", "bench")
+}
 
 func loadTraffic(routes []route) http.Handler {
 	router := traffic.New()
@@ -655,8 +923,45 @@ func loadTrafficSingle(method, path string, handler traffic.HttpHandleFunc) http
 	return router
 }
 
+// Zeus
+func loadZeus(routes []route) http.Handler {
+	m := zeus.New()
+	for _, route := range routes {
+		switch route.method {
+		case "GET":
+			m.GET(route.path, http.HandlerFunc(httpHandlerFunc))
+		case "POST":
+			m.POST(route.path, http.HandlerFunc(httpHandlerFunc))
+		case "PUT":
+			m.PUT(route.path, http.HandlerFunc(httpHandlerFunc))
+		case "DELETE":
+			m.DELETE(route.path, http.HandlerFunc(httpHandlerFunc))
+		default:
+			panic("Unknow HTTP method: " + route.method)
+		}
+	}
+	return m
+}
+
+func loadZeusSingle(method, path string, handler http.HandlerFunc) http.Handler {
+	m := zeus.New()
+	switch method {
+	case "GET":
+		m.GET(path, handler)
+	case "POST":
+		m.POST(path, handler)
+	case "PUT":
+		m.PUT(path, handler)
+	case "DELETE":
+		m.DELETE(path, handler)
+	default:
+		panic("Unknow HTTP method: " + method)
+	}
+	return m
+}
+
 // Usage notice
 func main() {
-	fmt.Println("Usage: go test -bench=.")
+	fmt.Println("Usage: go test -bench=. -timeout=20m")
 	os.Exit(1)
 }
